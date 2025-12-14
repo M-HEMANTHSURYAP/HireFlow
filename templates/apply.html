@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>My Applications</h2>
+
+{% for app, job in applications %}
+<div>
+    <strong>{{ job.title }}</strong> at {{ job.company }} <br>
+    Status: <b>{{ app.status }}</b>
+</div>
+<hr>
+{% endfor %}
+
+<a href="/jobs">Back to Jobs</a> |
+<a href="/logout">Logout</a>
+</body>
+</html>

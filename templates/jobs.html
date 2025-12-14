@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HireFlow - Jobs</title>
+</head>
+<body>
+
+<h2>Available Jobs</h2>
+
+{% for job in jobs %}
+<div>
+    <h3>{{ job.title }} - {{ job.company }}</h3>
+    <p>{{ job.description }}</p>
+
+    {% if job.id in applied_jobs %}
+        <b>Already Applied</b>
+    {% else %}
+        <a href="/apply/{{ job.id }}">Apply</a>
+    {% endif %}
+</div>
+<hr>
+{% endfor %}
+
+<a href="/applications">My Applications</a> |
+<a href="/logout">Logout</a>
+
+</body>
+</html>
