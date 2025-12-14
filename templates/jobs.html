@@ -1,28 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>HireFlow - Jobs</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-<h2>Available Jobs</h2>
+{% block title %}Jobs | HireFlow{% endblock %}
 
-{% for job in jobs %}
-<div>
-    <h3>{{ job.title }} - {{ job.company }}</h3>
-    <p>{{ job.description }}</p>
+{% block content %}
 
-    {% if job.id in applied_jobs %}
-        <b>Already Applied</b>
-    {% else %}
-        <a href="/apply/{{ job.id }}">Apply</a>
-    {% endif %}
+<div class="container mt-4">
+    <h2>Available Jobs</h2>
+
+    <div class="mb-3">
+        <a class="btn btn-outline-secondary btn-sm" href="/applications">My Applications</a>
+        <a class="btn btn-danger btn-sm float-end" href="/logout">Logout</a>
+    </div>
+
+    {% for job in jobs %}
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <h5>{{ job.title }}</h5>
+            <p><b>{{ job.company }}</b></p>
+            <p>{{ job.description }}</p>
+
+            {% if job.id in applied_jobs %}
+                <span class="badge bg-success">Applied</span>
+                <a class="btn btn-sm btn-outline-danger" href="/withdraw/{{ job.id }}">
+                    Withdraw
+                </a>
+            {% else %}
+                <a class="btn btn-sm btn-primary" href="/apply/{{ job.id }}">
+                    Apply
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
 </div>
-<hr>
-{% endfor %}
 
-<a href="/applications">My Applications</a> |
-<a href="/logout">Logout</a>
-
-</body>
-</html>
+{% endblock %}
