@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Shortlisted Candidates | HireFlow{% endblock %}
+
+{% block content %}
+<h2>Shortlisted Candidates</h2>
+
+<div class="mb-3">
+    <a href="/company" class="btn btn-outline-secondary btn-sm">
+        ← Back to Dashboard
+    </a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Candidate</th>
+            <th>Email</th>
+            <th>Job</th>
+            <th>Resume</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for app, user, job in applications %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ app.email }}</td>
+            <td>{{ job.title }}</td>
+            <td>
+                <a href="/resume/{{ app.resume_file }}"
+                   target="_blank"
+                   class="btn btn-sm btn-outline-primary">
+                   View Resume
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if not applications %}
+<p class="text-muted">No shortlisted candidates yet.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,37 +1,103 @@
 {% extends "base.html" %}
-
 {% block title %}Jobs | HireFlow{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
-    <h2>Available Jobs</h2>
+<!-- 🔹 TOP MOTIVATION / COMPANY CAROUSEL -->
+<div id="jobHeroCarousel" class="carousel slide mb-4 shadow rounded overflow-hidden" data-bs-ride="carousel">
+    <div class="carousel-inner">
 
-    <div class="mb-3">
-        <a class="btn btn-outline-secondary btn-sm" href="/applications">My Applications</a>
-        <a class="btn btn-danger btn-sm float-end" href="/logout">Logout</a>
+        <div class="carousel-item active">
+            <div class="p-5 text-white" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
+                <h3>Build Your Career with Top Companies 🚀</h3>
+                <p class="mb-0">Apply to jobs that match your skills and ambition</p>
+            </div>
+        </div>
+
+        <div class="carousel-item">
+            <div class="p-5 text-white" style="background: linear-gradient(135deg, #198754, #146c43);">
+                <h3>Opportunities That Shape Your Future 💼</h3>
+                <p class="mb-0">Trusted companies are hiring through HireFlow</p>
+            </div>
+        </div>
+
+        <div class="carousel-item">
+            <div class="p-5 text-white" style="background: linear-gradient(135deg, #6f42c1, #59339d);">
+                <h3>Apply. Get Shortlisted. Get Hired ✅</h3>
+                <p class="mb-0">Your journey to success starts here</p>
+            </div>
+        </div>
+
     </div>
+</div>
 
-    {% for job in jobs %}
-    <div class="card mb-3 shadow-sm">
-        <div class="card-body">
-            <h5>{{ job.title }}</h5>
-            <p><b>{{ job.company }}</b></p>
-            <p>{{ job.description }}</p>
+<script>
+    new bootstrap.Carousel('#jobHeroCarousel', {
+        interval: 2000,
+        ride: 'carousel'
+    });
+</script>
 
-            {% if job.id in applied_jobs %}
-                <span class="badge bg-success">Applied</span>
-                <a class="btn btn-sm btn-outline-danger" href="/withdraw/{{ job.id }}">
-                    Withdraw
-                </a>
-            {% else %}
-                <a class="btn btn-sm btn-primary" href="/apply/{{ job.id }}">
-                    Apply
-                </a>
+<!-- 🔹 HEADER ACTIONS -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Available Jobs</h2>
+
+    <div>
+        <a class="btn btn-outline-secondary btn-sm" href="/applications">
+            My Applications
+        </a>
+        <a class="btn btn-danger btn-sm ms-2" href="/logout">
+            Logout
+        </a>
+    </div>
+</div>
+
+<!-- 🔹 JOB CARDS -->
+{% for job in jobs %}
+<div class="card mb-4 shadow border-0">
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between">
+            <div>
+                <h5 class="fw-bold">{{ job.title }}</h5>
+                <span class="badge bg-dark">{{ job.company }}</span>
+            </div>
+
+            {% if job.id in applications %}
+                {% if applications[job.id] == "Applied" %}
+                    <span class="badge bg-warning text-dark align-self-start">
+                        In Progress
+                    </span>
+                {% elif applications[job.id] == "Shortlisted" %}
+                    <span class="badge bg-success align-self-start">
+                        Selected ✅
+                    </span>
+                {% elif applications[job.id] == "Rejected" %}
+                    <span class="badge bg-danger align-self-start">
+                        Rejected ❌
+                    </span>
+                {% endif %}
             {% endif %}
         </div>
+
+        <p class="text-muted mt-3">
+            {{ job.description }}
+        </p>
+
+        <!-- 🔹 ACTION BUTTONS -->
+        {% if job.id not in applications %}
+            <a class="btn btn-primary btn-sm" href="/apply/{{ job.id }}">
+                Apply Now
+            </a>
+
+        {% elif applications[job.id] == "Applied" %}
+            <a class="btn btn-outline-danger btn-sm" href="/withdraw/{{ job.id }}">
+                Withdraw Application
+            </a>
+        {% endif %}
+
     </div>
-    {% endfor %}
 </div>
+{% endfor %}
 
 {% endblock %}

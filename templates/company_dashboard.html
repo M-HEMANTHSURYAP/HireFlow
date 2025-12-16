@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Company Dashboard | HireFlow{% endblock %}
+
+{% block content %}
+<h2>Company Dashboard</h2>
+
+<div class="mb-3">
+    <a href="/company/add-job" class="btn btn-primary btn-sm">+ Post Job</a>
+    <a href="/company/shortlisted" class="btn btn-success btn-sm ms-2">
+        Shortlisted Candidates
+    </a>
+    <a class="btn btn-danger btn-sm float-end" href="/logout">Logout</a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Job</th>
+            <th>Experience</th>
+            <th>Skills</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for job in jobs %}
+        <tr>
+            <td>{{ job.title }}</td>
+            <td>{{ job.experience }}</td>
+            <td>{{ job.skills }}</td>
+            <td>
+                {% if job.status == "Pending" %}
+                    <span class="badge bg-warning">Pending</span>
+                {% elif job.status == "Approved" %}
+                    <span class="badge bg-success">Approved</span>
+                {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

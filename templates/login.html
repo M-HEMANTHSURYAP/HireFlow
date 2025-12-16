@@ -1,31 +1,73 @@
 {% extends "base.html" %}
-
 {% block title %}Login | HireFlow{% endblock %}
 
 {% block content %}
 
-<div class="container mt-5">
-    <div class="card mx-auto shadow" style="max-width: 400px;">
-        <div class="card-body">
-            <h3 class="text-center mb-3">HireFlow Login</h3>
+<div class="row shadow rounded overflow-hidden" style="min-height: 420px;">
 
-            <form method="post">
-                <input class="form-control mb-3" name="username" placeholder="Username" required>
-                <input class="form-control mb-3" type="password" name="password" placeholder="Password" required>
-
-                <select class="form-select mb-3" name="role">
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
-                </select>
-
-                <button class="btn btn-primary w-100">Login</button>
-            </form>
-
-            <div class="text-center mt-3">
-                <a href="/register">Create account</a>
+    <!-- LEFT SIDE : IMAGE SLIDER -->
+    <div class="col-md-6 d-none d-md-block p-0">
+        <div id="loginCarousel" class="carousel slide h-100" data-bs-ride="carousel">
+            <div class="carousel-inner h-100">
+                <div class="carousel-item active h-100">
+                    <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d"
+                         class="w-100 h-100 object-fit-cover">
+                </div>
+                <div class="carousel-item h-100">
+                    <img src="https://images.unsplash.com/photo-1552664730-d307ca884978"
+                         class="w-100 h-100 object-fit-cover">
+                </div>
+                <div class="carousel-item h-100">
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f"
+                         class="w-100 h-100 object-fit-cover">
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- RIGHT SIDE : LOGIN FORM -->
+    <div class="col-md-6 bg-white p-5 d-flex flex-column justify-content-center">
+        <h3 class="mb-2 text-center">Welcome Back 👋</h3>
+        <p class="text-muted text-center mb-4">
+            Login to continue to HireFlow
+        </p>
+
+        <form method="post">
+            <input class="form-control mb-3"
+                   name="username"
+                   placeholder="Username"
+                   required>
+
+            <input class="form-control mb-3"
+                   type="password"
+                   name="password"
+                   placeholder="Password"
+                   required>
+
+            <select class="form-select mb-3" name="role" required>
+                <option value="user">User</option>
+                <option value="company">Company</option>
+                <option value="admin">Admin</option>
+            </select>
+
+            <button class="btn btn-primary w-100">
+                Login
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <small>New here?</small>
+            <a href="/register">Create account</a>
+        </div>
+    </div>
+
 </div>
+
+<script>
+    new bootstrap.Carousel('#loginCarousel', {
+        interval: 2000,
+        ride: 'carousel'
+    });
+</script>
 
 {% endblock %}

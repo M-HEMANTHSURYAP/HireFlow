@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Post Job | HireFlow{% endblock %}
+
+{% block content %}
+<h2>Post a New Job</h2>
+
+<form method="post" class="card p-4 shadow-sm">
+
+    <div class="mb-3">
+        <label class="form-label">Job Title</label>
+        <input class="form-control" name="title" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Required Skills</label>
+        <input class="form-control" name="skills" placeholder="Python, Flask, SQL" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Experience</label>
+        <input class="form-control" name="experience" placeholder="0-2 years / 3+ years" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Job Description</label>
+        <textarea class="form-control" name="description" rows="4" required></textarea>
+    </div>
+
+    <button class="btn btn-success">Send for Admin Approval</button>
+    <a href="/company" class="btn btn-outline-secondary ms-2">Cancel</a>
+
+</form>
+{% endblock %}

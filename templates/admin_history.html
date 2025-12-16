@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Application History | HireFlow{% endblock %}
+
+{% block content %}
+<h2>Application History</h2>
+
+<a class="btn btn-secondary btn-sm mb-3" href="/admin">⬅ Back</a>
+
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>User</th>
+            <th>Job</th>
+            <th>Status</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for app, user, job in applications %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ job.title }}</td>
+            <td>
+                {% if app.status == "Shortlisted" %}
+                    <span class="badge bg-success">Shortlisted</span>
+                {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="/admin/delete/{{ app.id }}"
+                   class="btn btn-sm btn-outline-danger"
+                   onclick="return confirm('Delete this record?')">
+                   Delete
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

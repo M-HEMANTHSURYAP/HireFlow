@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}My Profile | HireFlow{% endblock %}
+
+{% block content %}
+<h3>My Profile</h3>
+
+<form method="post" class="card p-3 shadow-sm" style="max-width:400px;">
+    <label class="form-label">Username</label>
+    <input class="form-control mb-3"
+           name="username"
+           value="{{ current_user.username }}"
+           required>
+
+    <button class="btn btn-primary">Update Profile</button>
+</form>
+{% endblock %}

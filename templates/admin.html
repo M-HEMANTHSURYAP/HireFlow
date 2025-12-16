@@ -1,47 +1,64 @@
 {% extends "base.html" %}
-
 {% block title %}Admin Dashboard | HireFlow{% endblock %}
 
 {% block content %}
+<h2>Admin Dashboard</h2>
 
-<div class="container mt-4">
-    <h2>Admin Dashboard</h2>
-    <a class="btn btn-danger btn-sm float-end" href="/logout">Logout</a>
-    <hr>
+<div class="mb-3">
+    <a href="/admin/job-requests" class="btn btn-outline-primary btn-sm">
+        Company Job Requests
+    </a>
 
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>User</th>
-                <th>Job</th>
-                <th>Email</th>
-                <th>Resume</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
+    <a href="/admin/history" class="btn btn-outline-secondary btn-sm">
+        Application History
+    </a>
 
-        <tbody>
-        {% for app, user, job in applications %}
-        <tr>
-            <td>{{ user.username }}</td>
-            <td>{{ job.title }}</td>
-            <td>{{ app.email }}</td>
-            <td>
-                <a class="btn btn-sm btn-outline-primary"
-                   href="/resume/{{ app.resume_file }}" target="_blank">
-                   View
-                </a>
-            </td>
-            <td><span class="badge bg-info">{{ app.status }}</span></td>
-            <td>
-                <a class="btn btn-success btn-sm" href="/update_status/{{ app.id }}/Shortlisted">Shortlist</a>
-                <a class="btn btn-danger btn-sm" href="/update_status/{{ app.id }}/Rejected">Reject</a>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <a class="btn btn-danger btn-sm float-end" href="/logout">
+        Logout
+    </a>
 </div>
 
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>User</th>
+            <th>Job</th>
+            <th>Email</th>
+            <th>Resume</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for app, user, job in applications %}
+    <tr>
+        <td>{{ user.username }}</td>
+        <td>{{ job.title }}</td>
+        <td>{{ app.email }}</td>
+        <td>
+            <a class="btn btn-sm btn-outline-primary"
+               href="{{ url_for('view_resume', filename=app.resume_file) }}"
+               target="_blank">
+               View
+            </a>
+        </td>
+        <td>
+            <span class="badge bg-info">{{ app.status }}</span>
+        </td>
+        <td>
+            <a class="btn btn-success btn-sm"
+               href="{{ url_for('update_status', app_id=app.id, status='Shortlisted') }}">
+               Shortlist
+            </a>
+
+            <a class="btn btn-danger btn-sm"
+               href="{{ url_for('update_status', app_id=app.id, status='Rejected') }}">
+               Reject
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

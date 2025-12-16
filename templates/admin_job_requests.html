@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Job Requests | Admin{% endblock %}
+
+{% block content %}
+<h2>Company Job Requests</h2>
+
+<div class="mb-3">
+    <a href="/admin" class="btn btn-outline-secondary btn-sm">
+        ← Back to Dashboard
+    </a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Company ID</th>
+            <th>Job Title</th>
+            <th>Skills</th>
+            <th>Experience</th>
+            <th>Description</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for job in jobs %}
+        <tr>
+            <td>{{ job.company_id }}</td>
+            <td>{{ job.title }}</td>
+            <td>{{ job.skills }}</td>
+            <td>{{ job.experience }}</td>
+            <td>{{ job.description }}</td>
+            <td>
+                <a href="/admin/job-action/{{ job.id }}/approve"
+                   class="btn btn-success btn-sm">
+                   Approve
+                </a>
+                <a href="/admin/job-action/{{ job.id }}/reject"
+                   class="btn btn-danger btn-sm">
+                   Reject
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% if not jobs %}
+<p class="text-muted">No pending job requests.</p>
+{% endif %}
+
+{% endblock %}

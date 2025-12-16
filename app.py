@@ -1,4 +1,7 @@
-from flask import Flask, render_template, redirect, url_for, request, send_from_directory
+from flask import (
+    Flask, render_template, redirect,
+    url_for, request, send_from_directory, flash
+)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager, UserMixin,
@@ -20,13 +23,13 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# ---------------- MODELS ----------------
+# ================= MODELS =================
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default="user")
+    role = db.Column(db.String(20))  # user | admin | company
 
 
 class Job(db.Model):
@@ -36,14 +39,22 @@ class Job(db.Model):
     description = db.Column(db.Text)
 
 
+class JobRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_username = db.Column(db.String(100))
+    title = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    skills = db.Column(db.String(200))
+    experience = db.Column(db.String(50))
+    status = db.Column(db.String(50), default="Pending")
+
+
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer)
     job_id = db.Column(db.Integer)
-
     email = db.Column(db.String(120))
     resume_file = db.Column(db.String(200))
-
     status = db.Column(db.String(50), default="Applied")
 
 
@@ -51,8 +62,7 @@ class Application(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-
-# ---------------- HELPERS ----------------
+# ================= HELPERS =================
 
 def admin_required(func):
     def wrapper(*args, **kwargs):
@@ -63,11 +73,19 @@ def admin_required(func):
     return wrapper
 
 
+def company_required(func):
+    def wrapper(*args, **kwargs):
+        if current_user.role != "company":
+            return "Access Denied", 403
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
-# ---------------- ROUTES ----------------
+# ================= AUTH =================
 
 @app.route('/')
 def home():
@@ -83,6 +101,7 @@ def register():
             role="user"
         ))
         db.session.commit()
+        flash("Successfully registered", "success")
         return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -95,72 +114,116 @@ def login():
 
         if user and check_password_hash(user.password, request.form['password']):
             if user.role != role:
-                return "Invalid role selected", 403
+                flash("Invalid role selected", "danger")
+                return redirect(url_for('login'))
 
             login_user(user)
-            return redirect(url_for('admin_dashboard' if role == "admin" else 'jobs'))
 
+            if role == "admin":
+                return redirect(url_for('admin_dashboard'))
+            if role == "company":
+                return redirect(url_for('company_dashboard'))
+            return redirect(url_for('jobs'))
+
+        flash("Invalid credentials", "danger")
     return render_template('login.html')
 
+# ================= USER =================
 
 @app.route('/jobs')
 @login_required
 def jobs():
     jobs = Job.query.all()
-    applied_jobs = [a.job_id for a in Application.query.filter_by(user_id=current_user.id)]
-    return render_template('jobs.html', jobs=jobs, applied_jobs=applied_jobs)
+    applications = {
+        a.job_id: a.status
+        for a in Application.query.filter_by(user_id=current_user.id).all()
+    }
+    return render_template('jobs.html', jobs=jobs, applications=applications)
 
 
-# 🔥 APPLY WITH EMAIL + RESUME
 @app.route('/apply/<int:job_id>', methods=['GET', 'POST'])
 @login_required
 def apply(job_id):
-    job = Job.query.get(job_id)
+    job = Job.query.get_or_404(job_id)
 
     if request.method == 'POST':
-        email = request.form['email']
         file = request.files['resume']
-
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-            db.session.add(Application(
-                user_id=current_user.id,
-                job_id=job_id,
-                email=email,
-                resume_file=filename
-            ))
-            db.session.commit()
+            if not Application.query.filter_by(
+                user_id=current_user.id, job_id=job_id
+            ).first():
+                db.session.add(Application(
+                    user_id=current_user.id,
+                    job_id=job_id,
+                    email=request.form['email'],
+                    resume_file=filename
+                ))
+                db.session.commit()
 
-            return redirect(url_for('my_applications'))
+            flash("Applied successfully", "success")
+            return redirect(url_for('jobs'))
+
+        flash("Only PDF allowed", "danger")
 
     return render_template('resume.html', job=job)
 
+# ================= COMPANY =================
 
-@app.route('/withdraw/<int:job_id>')
+@app.route('/company')
 @login_required
-def withdraw(job_id):
-    application = Application.query.filter_by(
-        user_id=current_user.id, job_id=job_id
-    ).first()
-    if application:
-        db.session.delete(application)
+@company_required
+def company_dashboard():
+    jobs = JobRequest.query.filter_by(
+        company_username=current_user.username
+    ).all()
+    return render_template('company_dashboard.html', jobs=jobs)
+
+
+@app.route('/company/add-job', methods=['GET', 'POST'])
+@login_required
+@company_required
+def company_add_job():
+    if request.method == 'POST':
+        db.session.add(JobRequest(
+            company_username=current_user.username,
+            title=request.form['title'],
+            description=request.form['description'],
+            skills=request.form['skills'],
+            experience=request.form['experience']
+        ))
         db.session.commit()
-    return redirect(url_for('my_applications'))
+        flash("Job sent for admin approval", "success")
+        return redirect(url_for('company_dashboard'))
+
+    return render_template('company_add_job.html')
 
 
-@app.route('/applications')
+@app.route('/company/shortlisted')
 @login_required
-def my_applications():
-    applications = db.session.query(Application, Job).join(
-        Job, Application.job_id == Job.id
-    ).filter(Application.user_id == current_user.id).all()
-    return render_template('apply.html', applications=applications)
+@company_required
+def company_shortlisted():
+    jobs = Job.query.filter_by(company=current_user.username).all()
+    job_ids = [job.id for job in jobs]
 
+    applications = db.session.query(
+        Application, User, Job
+    ).join(User, Application.user_id == User.id)\
+     .join(Job, Application.job_id == Job.id)\
+     .filter(
+        Application.job_id.in_(job_ids),
+        Application.status == "Shortlisted"
+     ).all()
 
-# ---------------- ADMIN ----------------
+    return render_template(
+        "company_shortlisted.html",
+        applications=applications
+    )
+
+# ================= ADMIN =================
 
 @app.route('/admin')
 @login_required
@@ -169,26 +232,123 @@ def admin_dashboard():
     applications = db.session.query(
         Application, User, Job
     ).join(User, Application.user_id == User.id)\
-     .join(Job, Application.job_id == Job.id).all()
+     .join(Job, Application.job_id == Job.id)\
+     .filter(Application.status == "Applied")\
+     .all()
+
     return render_template('admin.html', applications=applications)
 
 
-@app.route('/resume/<filename>')
+# ✅ FIXED: ADMIN HISTORY ROUTE
+@app.route('/admin/history')
 @login_required
 @admin_required
-def view_resume(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+def admin_history():
+    applications = db.session.query(
+        Application, User, Job
+    ).join(User, Application.user_id == User.id)\
+     .join(Job, Application.job_id == Job.id)\
+     .filter(Application.status != "Applied")\
+     .all()
+
+    return render_template(
+        'admin_history.html',
+        applications=applications
+    )
+
+
+@app.route('/admin/job-requests')
+@login_required
+@admin_required
+def admin_job_requests():
+    jobs = JobRequest.query.filter_by(status="Pending").all()
+    return render_template('admin_job_requests.html', jobs=jobs)
+
+
+@app.route('/admin/job-action/<int:job_id>/<action>')
+@login_required
+@admin_required
+def admin_job_action(job_id, action):
+    job_req = JobRequest.query.get_or_404(job_id)
+
+    if action == "approve":
+        db.session.add(Job(
+            title=job_req.title,
+            company=job_req.company_username,
+            description=job_req.description
+        ))
+        job_req.status = "Approved"
+
+    elif action == "reject":
+        job_req.status = "Rejected"
+
+    db.session.commit()
+    flash("Job action completed", "success")
+    return redirect(url_for('admin_job_requests'))
 
 
 @app.route('/update_status/<int:app_id>/<status>')
 @login_required
 @admin_required
 def update_status(app_id, status):
-    app_entry = Application.query.get(app_id)
-    app_entry.status = status
+    application = Application.query.get_or_404(app_id)
+    application.status = status
     db.session.commit()
+    flash(f"Application {status}", "success")
     return redirect(url_for('admin_dashboard'))
 
+
+@app.route('/resume/<filename>')
+@login_required
+def view_resume(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+# ================= USER ACCOUNT PAGES =================
+
+@app.route('/my-applications')
+@login_required
+def my_applications_menu():
+    return redirect(url_for('jobs'))  # reuse existing logic
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        current_user.username = request.form['username']
+        db.session.commit()
+        flash("Profile updated successfully", "success")
+        return redirect(url_for('profile'))
+
+    return render_template('profile.html')
+
+
+@app.route('/account-security', methods=['GET', 'POST'])
+@login_required
+def account_security():
+    if request.method == 'POST':
+        if not check_password_hash(
+            current_user.password,
+            request.form['current_password']
+        ):
+            flash("Current password incorrect", "danger")
+            return redirect(url_for('account_security'))
+
+        current_user.password = generate_password_hash(
+            request.form['new_password']
+        )
+        db.session.commit()
+        flash("Password updated successfully", "success")
+        return redirect(url_for('account_security'))
+
+    return render_template('account_security.html')
+
+
+@app.route('/settings')
+@login_required
+def settings():
+    return render_template('settings.html')
+
+# ================= LOGOUT =================
 
 @app.route('/logout')
 @login_required
@@ -196,8 +356,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-
-# ---------------- INIT ----------------
+# ================= INIT =================
 
 with app.app_context():
     db.create_all()
@@ -208,16 +367,15 @@ with app.app_context():
             password=generate_password_hash("admin123"),
             role="admin"
         ))
-        db.session.commit()
 
-    if not Job.query.first():
-        db.session.add_all([
-            Job(title="Software Engineer", company="TechCorp", description="Python & Flask Developer"),
-            Job(title="Frontend Developer", company="UIWorks", description="HTML, CSS, JavaScript"),
-            Job(title="Cyber Analyst", company="SecureX", description="SOC & Security Monitoring")
-        ])
-        db.session.commit()
+    if not User.query.filter_by(username="company1").first():
+        db.session.add(User(
+            username="company1",
+            password=generate_password_hash("company123"),
+            role="company"
+        ))
 
+    db.session.commit()
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

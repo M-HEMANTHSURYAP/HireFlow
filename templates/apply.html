@@ -1,37 +1,44 @@
 {% extends "base.html" %}
-
 {% block title %}My Applications | HireFlow{% endblock %}
 
 {% block content %}
+<h2>My Applications</h2>
 
-<div class="container mt-4">
-    <h2>My Applications</h2>
+<a class="btn btn-secondary btn-sm mb-3" href="/jobs">⬅ Back to Jobs</a>
 
-    <div class="mb-3">
-        <a class="btn btn-secondary btn-sm" href="/jobs">Back to Jobs</a>
-    </div>
-
-    <table class="table table-hover">
+<table class="table table-bordered">
+    <thead class="table-dark">
         <tr>
             <th>Job</th>
             <th>Status</th>
             <th>Action</th>
         </tr>
+    </thead>
 
-        {% for app, job in applications %}
+    <tbody>
+    {% for app, job in applications %}
         <tr>
             <td>{{ job.title }}</td>
             <td>
-                <span class="badge bg-info">{{ app.status }}</span>
+                {% if app.status == "Applied" %}
+                    <span class="badge bg-warning">In Progress</span>
+                {% elif app.status == "Shortlisted" %}
+                    <span class="badge bg-success">Selected</span>
+                {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% endif %}
             </td>
             <td>
-                <a class="btn btn-sm btn-danger" href="/withdraw/{{ job.id }}">
-                    Withdraw
-                </a>
+                {% if app.status == "Applied" %}
+                    <a href="/withdraw/{{ job.id }}" class="btn btn-sm btn-danger">
+                        Withdraw
+                    </a>
+                {% else %}
+                    —
+                {% endif %}
             </td>
         </tr>
-        {% endfor %}
-    </table>
-</div>
-
+    {% endfor %}
+    </tbody>
+</table>
 {% endblock %}
