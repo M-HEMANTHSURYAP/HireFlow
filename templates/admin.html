@@ -2,63 +2,156 @@
 {% block title %}Admin Dashboard | HireFlow{% endblock %}
 
 {% block content %}
-<h2>Admin Dashboard</h2>
+<style>
+    .admin-stats-card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    .table-container {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        color: #495057;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        font-weight: 700;
+        border-bottom: 2px solid #dee2e6;
+        padding: 15px;
+    }
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+    .status-badge-admin {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    .btn-action {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .nav-pill-custom {
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    .btn-view-resume {
+        color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+        border: 1px solid rgba(13, 110, 253, 0.1);
+    }
+    .btn-view-resume:hover {
+        background-color: #0d6efd;
+        color: white;
+    }
+</style>
 
-<div class="mb-3">
-    <a href="/admin/job-requests" class="btn btn-outline-primary btn-sm">
-        Company Job Requests
-    </a>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Administrative Terminal</h2>
+            <p class="text-muted mb-0">Manage global applications and platform oversight.</p>
+        </div>
+        <a class="btn btn-outline-danger btn-sm px-4" href="/logout">
+            <i class="bi bi-box-arrow-right me-1"></i> Logout
+        </a>
+    </div>
 
-    <a href="/admin/history" class="btn btn-outline-secondary btn-sm">
-        Application History
-    </a>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-2 d-flex gap-2">
+            <a href="/admin/job-requests" class="nav-pill-custom bg-primary text-white shadow-sm">
+                <i class="bi bi-clipboard-check me-1"></i> Company Job Requests
+            </a>
+            <a href="/admin/history" class="nav-pill-custom text-dark bg-light">
+                <i class="bi bi-clock-history me-1"></i> Application History
+            </a>
+        </div>
+    </div>
 
-    <a class="btn btn-danger btn-sm float-end" href="/logout">
-        Logout
-    </a>
+    <div class="mb-3 d-flex align-items-center">
+        <h5 class="fw-bold mb-0">Pending Reviews</h5>
+        <span class="badge bg-dark ms-2">{{ applications|length }}</span>
+    </div>
+
+    <div class="table-container border">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Target Role</th>
+                        <th>Contact Email</th>
+                        <th class="text-center">Documentation</th>
+                        <th class="text-center">Current Status</th>
+                        <th class="text-end">Management Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for app, user, job in applications %}
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">{{ user.username }}</div>
+                        <small class="text-muted">ID: #{{ app.id }}</small>
+                    </td>
+                    <td>
+                        <span class="text-primary fw-semibold">{{ job.title }}</span>
+                    </td>
+                    <td>{{ app.email }}</td>
+                    <td class="text-center">
+                        <a class="btn btn-sm btn-view-resume"
+                           href="{{ url_for('view_resume', filename=app.resume_file) }}"
+                           target="_blank">
+                           <i class="bi bi-file-earmark-pdf me-1"></i> View CV
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        <span class="status-badge-admin bg-info-subtle text-info text-uppercase">
+                            {{ app.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group shadow-sm" role="group">
+                            <a class="btn btn-success btn-sm btn-action px-3"
+                               href="{{ url_for('update_status', app_id=app.id, status='Shortlisted') }}">
+                               <i class="bi bi-check2 me-1"></i> Shortlist
+                            </a>
+
+                            <a class="btn btn-danger btn-sm btn-action px-3"
+                               href="{{ url_for('update_status', app_id=app.id, status='Rejected') }}">
+                               <i class="bi bi-x-lg me-1"></i> Reject
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not applications %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                            No pending applications to review.
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>User</th>
-            <th>Job</th>
-            <th>Email</th>
-            <th>Resume</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-
-    <tbody>
-    {% for app, user, job in applications %}
-    <tr>
-        <td>{{ user.username }}</td>
-        <td>{{ job.title }}</td>
-        <td>{{ app.email }}</td>
-        <td>
-            <a class="btn btn-sm btn-outline-primary"
-               href="{{ url_for('view_resume', filename=app.resume_file) }}"
-               target="_blank">
-               View
-            </a>
-        </td>
-        <td>
-            <span class="badge bg-info">{{ app.status }}</span>
-        </td>
-        <td>
-            <a class="btn btn-success btn-sm"
-               href="{{ url_for('update_status', app_id=app.id, status='Shortlisted') }}">
-               Shortlist
-            </a>
-
-            <a class="btn btn-danger btn-sm"
-               href="{{ url_for('update_status', app_id=app.id, status='Rejected') }}">
-               Reject
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
 {% endblock %}

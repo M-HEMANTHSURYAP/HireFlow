@@ -35,8 +35,10 @@ class User(UserMixin, db.Model):
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
-    company = db.Column(db.String(100))
+    company = db.Column(db.String(100))  # company username
     description = db.Column(db.Text)
+    job_type = db.Column(db.String(20), default="platform")
+    # values: platform | company
 
 
 class JobRequest(db.Model):
@@ -133,12 +135,20 @@ def login():
 @app.route('/jobs')
 @login_required
 def jobs():
-    jobs = Job.query.all()
+    company_jobs = Job.query.filter_by(job_type="company").all()
+    platform_jobs = Job.query.filter_by(job_type="platform").all()
+
     applications = {
         a.job_id: a.status
         for a in Application.query.filter_by(user_id=current_user.id).all()
     }
-    return render_template('jobs.html', jobs=jobs, applications=applications)
+
+    return render_template(
+        'jobs.html',
+        company_jobs=company_jobs,
+        platform_jobs=platform_jobs,
+        applications=applications
+    )
 
 
 @app.route('/apply/<int:job_id>', methods=['GET', 'POST'])
@@ -148,14 +158,19 @@ def apply(job_id):
 
     if request.method == 'POST':
         file = request.files['resume']
+
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-            if not Application.query.filter_by(
-                user_id=current_user.id, job_id=job_id
-            ).first():
+            # prevent duplicate applications
+            existing = Application.query.filter_by(
+                user_id=current_user.id,
+                job_id=job_id
+            ).first()
+
+            if not existing:
                 db.session.add(Application(
                     user_id=current_user.id,
                     job_id=job_id,
@@ -222,6 +237,26 @@ def company_shortlisted():
         "company_shortlisted.html",
         applications=applications
     )
+@app.route('/company/applications')
+@login_required
+@company_required
+def company_applications():
+    # Get jobs posted by this company
+    jobs = Job.query.filter_by(company=current_user.username).all()
+    job_ids = [job.id for job in jobs]
+
+    # Get applications only for those jobs
+    applications = db.session.query(
+        Application, User, Job
+    ).join(User, Application.user_id == User.id) \
+     .join(Job, Application.job_id == Job.id) \
+     .filter(Application.job_id.in_(job_ids)) \
+     .all()
+
+    return render_template(
+        'company_applications.html',
+        applications=applications
+    )
 
 # ================= ADMIN =================
 
@@ -275,8 +310,10 @@ def admin_job_action(job_id, action):
         db.session.add(Job(
             title=job_req.title,
             company=job_req.company_username,
-            description=job_req.description
+            description=job_req.description,
+            job_type="company"
         ))
+
         job_req.status = "Approved"
 
     elif action == "reject":
@@ -357,9 +394,17 @@ def logout():
     return redirect(url_for('login'))
 
 # ================= INIT =================
-
 with app.app_context():
     db.create_all()
+
+    if not Job.query.filter_by(job_type="platform").first():
+        default_jobs = [
+            Job(title="Python Developer", company="HireFlow", description="Python, Flask, APIs", job_type="platform"),
+            Job(title="Frontend Developer", company="HireFlow", description="HTML, CSS, JS", job_type="platform"),
+            Job(title="Data Analyst", company="HireFlow", description="SQL, Excel, Power BI", job_type="platform"),
+            Job(title="Cyber Security Analyst", company="HireFlow", description="SOC, SIEM, Threat Analysis", job_type="platform"),
+        ]
+        db.session.add_all(default_jobs)
 
     if not User.query.filter_by(username="admin").first():
         db.session.add(User(
@@ -376,6 +421,7 @@ with app.app_context():
         ))
 
     db.session.commit()
+
 
 if __name__ == "__main__":
     app.run(debug=True)

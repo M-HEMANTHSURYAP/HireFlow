@@ -2,41 +2,152 @@
 {% block title %}Application History | HireFlow{% endblock %}
 
 {% block content %}
-<h2>Application History</h2>
+<style>
+    .history-card {
+        border-radius: 15px;
+        border: none;
+        background: #ffffff;
+    }
+    .table-history thead th {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1.2px;
+        font-weight: 700;
+        border-bottom: 2px solid #edf2f7;
+        padding: 16px;
+    }
+    .table-history tbody td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf2f7;
+    }
+    .status-pill {
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .user-avatar-sm {
+        width: 32px;
+        height: 32px;
+        background: #e2e8f0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        font-weight: bold;
+        color: #4a5568;
+    }
+    .btn-back {
+        transition: all 0.2s;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .btn-back:hover {
+        transform: translateX(-3px);
+    }
+    .btn-delete-history {
+        color: #e53e3e;
+        background: transparent;
+        border: 1px solid #fed7d7;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .btn-delete-history:hover {
+        background: #fff5f5;
+        border-color: #e53e3e;
+        color: #c53030;
+    }
+</style>
 
-<a class="btn btn-secondary btn-sm mb-3" href="/admin">⬅ Back</a>
+<div class="container py-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none text-muted">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Application History</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-dark mb-0">Decision History Log</h2>
+        </div>
+        <div class="col-auto">
+            <a class="btn btn-light border btn-back px-3" href="/admin">
+                <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
 
-<table class="table table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>User</th>
-            <th>Job</th>
-            <th>Status</th>
-            <th>Delete</th>
-        </tr>
-    </thead>
+    <div class="card history-card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-history mb-0">
+                    <thead>
+                        <tr>
+                            <th>Candidate Profile</th>
+                            <th>Applied Position</th>
+                            <th class="text-center">Final Decision</th>
+                            <th class="text-end px-4">Management</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for app, user, job in applications %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="user-avatar-sm">
+                                        {{ user.username[0] | upper }}
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold d-block text-dark">{{ user.username }}</span>
+                                        <small class="text-muted">User ID: #{{ user.id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-secondary">{{ job.title }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if app.status == "Shortlisted" %}
+                                    <span class="status-pill bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Shortlisted
+                                    </span>
+                                {% else %}
+                                    <span class="status-pill bg-danger-subtle text-danger border border-danger-subtle">
+                                        <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end px-4">
+                                <a href="/admin/delete/{{ app.id }}"
+                                   class="btn btn-sm btn-delete-history px-3"
+                                   onclick="return confirm('Are you sure you want to permanently delete this history record?')">
+                                   <i class="bi bi-trash3 me-1"></i> Purge
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
 
-    <tbody>
-    {% for app, user, job in applications %}
-        <tr>
-            <td>{{ user.username }}</td>
-            <td>{{ job.title }}</td>
-            <td>
-                {% if app.status == "Shortlisted" %}
-                    <span class="badge bg-success">Shortlisted</span>
-                {% else %}
-                    <span class="badge bg-danger">Rejected</span>
-                {% endif %}
-            </td>
-            <td>
-                <a href="/admin/delete/{{ app.id }}"
-                   class="btn btn-sm btn-outline-danger"
-                   onclick="return confirm('Delete this record?')">
-                   Delete
-                </a>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+                    {% if not applications %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <p class="text-muted mb-0">No archived applications found.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-3 text-end">
+        <small class="text-muted">Showing {{ applications|length }} total decision records</small>
+    </div>
+</div>
+
 {% endblock %}

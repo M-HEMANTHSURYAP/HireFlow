@@ -2,51 +2,150 @@
 {% block title %}Job Requests | Admin{% endblock %}
 
 {% block content %}
-<h2>Company Job Requests</h2>
+<style>
+    .request-card {
+        border-radius: 16px;
+        border: none;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    .table-requests thead th {
+        background-color: #f1f5f9;
+        color: #475569;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        padding: 1.25rem;
+        border: none;
+    }
+    .table-requests tbody td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .skill-badge {
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 500;
+        display: inline-block;
+        margin: 2px;
+    }
+    .exp-indicator {
+        font-weight: 600;
+        color: #0f172a;
+        font-size: 0.9rem;
+    }
+    .company-id-pill {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: monospace;
+        color: #64748b;
+    }
+    .btn-approve {
+        background-color: #10b981;
+        border: none;
+        transition: all 0.2s;
+    }
+    .btn-approve:hover {
+        background-color: #059669;
+        transform: scale(1.05);
+    }
+    .btn-reject {
+        background-color: #ef4444;
+        border: none;
+        transition: all 0.2s;
+    }
+    .btn-reject:hover {
+        background-color: #dc2626;
+        transform: scale(1.05);
+    }
+</style>
 
-<div class="mb-3">
-    <a href="/admin" class="btn btn-outline-secondary btn-sm">
-        ← Back to Dashboard
-    </a>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/admin" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Verification Queue</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0">Pending Job Requests 📋</h2>
+        </div>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm px-3 rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <div class="card request-card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-requests mb-0">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Position Details</th>
+                        <th>Required Skills</th>
+                        <th>Experience</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for job in jobs %}
+                <tr>
+                    <td>
+                        <span class="company-id-pill">ID: {{ job.company_id }}</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark fs-5">{{ job.title }}</div>
+                        <p class="text-muted small mb-0 mt-1" style="max-width: 250px;">
+                            {{ job.description[:100] }}{% if job.description|length > 100 %}...{% endif %}
+                        </p>
+                    </td>
+                    <td>
+                        {% for skill in job.skills.split(',') %}
+                        <span class="skill-badge">{{ skill.strip() }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <div class="exp-indicator">
+                            <i class="bi bi-briefcase me-1 text-primary"></i> {{ job.experience }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="/admin/job-action/{{ job.id }}/approve"
+                               class="btn btn-success btn-sm btn-approve px-3 shadow-sm">
+                               <i class="bi bi-check-lg"></i> Approve
+                            </a>
+                            <a href="/admin/job-action/{{ job.id }}/reject"
+                               class="btn btn-danger btn-sm btn-reject px-3 shadow-sm">
+                               <i class="bi bi-trash"></i> Reject
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not jobs %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-shield-check text-success display-1"></i>
+            </div>
+            <h4 class="text-dark fw-bold">All caught up!</h4>
+            <p class="text-muted">There are no pending company job requests to review.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Company ID</th>
-            <th>Job Title</th>
-            <th>Skills</th>
-            <th>Experience</th>
-            <th>Description</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-
-    <tbody>
-    {% for job in jobs %}
-        <tr>
-            <td>{{ job.company_id }}</td>
-            <td>{{ job.title }}</td>
-            <td>{{ job.skills }}</td>
-            <td>{{ job.experience }}</td>
-            <td>{{ job.description }}</td>
-            <td>
-                <a href="/admin/job-action/{{ job.id }}/approve"
-                   class="btn btn-success btn-sm">
-                   Approve
-                </a>
-                <a href="/admin/job-action/{{ job.id }}/reject"
-                   class="btn btn-danger btn-sm">
-                   Reject
-                </a>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-{% if not jobs %}
-<p class="text-muted">No pending job requests.</p>
-{% endif %}
 
 {% endblock %}

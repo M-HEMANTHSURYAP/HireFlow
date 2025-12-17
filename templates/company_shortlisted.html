@@ -2,44 +2,149 @@
 {% block title %}Shortlisted Candidates | HireFlow{% endblock %}
 
 {% block content %}
-<h2>Shortlisted Candidates</h2>
+<style>
+    .shortlist-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .talent-card {
+        border-radius: 16px;
+        border: none;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .header-gradient {
+        background: linear-gradient(90deg, #198754 0%, #20c997 100%);
+        height: 4px;
+        width: 60px;
+        border-radius: 2px;
+        margin-bottom: 1.5rem;
+    }
+    .table-talent thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1.2px;
+        padding: 1.25rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    .table-talent tbody td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b;
+    }
+    .candidate-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background: #d1fae5;
+        color: #065f46;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    .job-badge {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .btn-view-cv {
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+        border: 1px solid #e2e8f0;
+        background: white;
+    }
+    .btn-view-cv:hover {
+        border-color: #198754;
+        color: #198754;
+        background: #f0fdf4;
+    }
+</style>
 
-<div class="mb-3">
-    <a href="/company" class="btn btn-outline-secondary btn-sm">
-        ← Back to Dashboard
-    </a>
+<div class="container shortlist-container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Shortlisted Talent Pool 🌟</h2>
+            <p class="text-muted mb-0">These candidates have been identified for further review.</p>
+            <div class="header-gradient mt-2"></div>
+        </div>
+        <a href="/company" class="btn btn-light border px-4 rounded-pill shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+    </div>
+
+    <div class="card talent-card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-talent mb-0">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Contact Details</th>
+                        <th>Role Applied</th>
+                        <th class="text-end">Documentation</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for app, user, job in applications %}
+                    <tr>
+                        <td>
+                            <div class="candidate-info">
+                                <div class="avatar-circle">
+                                    {{ user.username[0] | upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ user.username }}</div>
+                                    <small class="text-muted">Verified Candidate</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center text-secondary small">
+                                <i class="bi bi-envelope-at me-2"></i>
+                                {{ app.email }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="job-badge">{{ job.title }}</span>
+                        </td>
+                        <td class="text-end">
+                            <a href="/resume/{{ app.resume_file }}"
+                               target="_blank"
+                               class="btn btn-sm btn-view-cv px-3">
+                               <i class="bi bi-file-earmark-person me-1"></i> View CV
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if not applications %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-person-dash text-light display-1"></i>
+            </div>
+            <h5 class="text-muted fw-bold">No shortlisted candidates yet.</h5>
+            <p class="text-muted small">Move applicants from your main list to see them here.</p>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Candidate</th>
-            <th>Email</th>
-            <th>Job</th>
-            <th>Resume</th>
-        </tr>
-    </thead>
-
-    <tbody>
-    {% for app, user, job in applications %}
-        <tr>
-            <td>{{ user.username }}</td>
-            <td>{{ app.email }}</td>
-            <td>{{ job.title }}</td>
-            <td>
-                <a href="/resume/{{ app.resume_file }}"
-                   target="_blank"
-                   class="btn btn-sm btn-outline-primary">
-                   View Resume
-                </a>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-{% if not applications %}
-<p class="text-muted">No shortlisted candidates yet.</p>
-{% endif %}
 
 {% endblock %}

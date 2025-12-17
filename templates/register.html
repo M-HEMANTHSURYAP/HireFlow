@@ -2,50 +2,96 @@
 {% block title %}Register | HireFlow{% endblock %}
 
 {% block content %}
+<style>
+    .auth-card {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .auth-image-overlay {
+        background: linear-gradient(135deg, rgba(25, 135, 84, 0.4), rgba(0, 0, 0, 0.7));
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: flex;
+        align-items: flex-end;
+        padding: 40px;
+        color: white;
+    }
+    .btn-register {
+        padding: 12px;
+        font-weight: 600;
+        border-radius: 10px;
+        background: #198754;
+        border: none;
+        transition: all 0.3s;
+    }
+    .btn-register:hover {
+        background: #146c43;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
+    }
+</style>
 
-<div class="row shadow rounded overflow-hidden" style="min-height: 420px;">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <div class="row shadow-lg auth-card" style="min-height: 550px;">
 
-    <!-- LEFT SIDE : IMAGE -->
-    <div class="col-md-6 d-none d-md-block p-0">
-        <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4"
-             class="w-100 h-100 object-fit-cover">
-    </div>
+                <div class="col-md-6 d-none d-md-block p-0 position-relative">
+                    <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4"
+                         class="w-100 h-100 object-fit-cover">
+                    <div class="auth-image-overlay">
+                        <div>
+                            <h2 class="fw-bold">Join the Future</h2>
+                            <p class="opacity-75">One account. Thousands of career possibilities.</p>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- RIGHT SIDE : REGISTER FORM -->
-    <div class="col-md-6 bg-white p-5 d-flex flex-column justify-content-center">
-        <h3 class="mb-2 text-center">Create Account 🚀</h3>
-        <p class="text-muted text-center mb-4">
-            Join HireFlow and start applying
-        </p>
+                <div class="col-md-6 bg-white p-5 d-flex flex-column justify-content-center">
+                    <div class="mb-4">
+                        <h3 class="fw-bold text-dark">Create Account 🚀</h3>
+                        <p class="text-muted">Start your professional journey with us today.</p>
+                    </div>
 
-        <form method="post">
-            <div class="mb-3">
-                <label class="form-label">Username</label>
-                <input class="form-control"
-                       name="username"
-                       placeholder="Choose a username"
-                       required>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">USERNAME</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-person text-muted"></i></span>
+                                <input class="form-control bg-light border-0 py-2"
+                                       name="username"
+                                       placeholder="e.g. johndoe"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">PASSWORD</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-lock text-muted"></i></span>
+                                <input class="form-control bg-light border-0 py-2"
+                                       type="password"
+                                       name="password"
+                                       placeholder="Min. 8 characters"
+                                       required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 btn-register mb-3">
+                            Create Free Account
+                        </button>
+
+                        <div class="text-center">
+                            <p class="text-muted small mb-0">Already have an account?</p>
+                            <a href="/login" class="text-success fw-bold text-decoration-none">Back to Login</a>
+                        </div>
+                    </form>
+                </div>
+
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input class="form-control"
-                       type="password"
-                       name="password"
-                       placeholder="Create a password"
-                       required>
-            </div>
-
-            <button class="btn btn-success w-100 mb-2">
-                Register
-            </button>
-
-            <a href="/login" class="btn btn-outline-secondary w-100">
-                Back to Login
-            </a>
-        </form>
+        </div>
     </div>
-
 </div>
-
 {% endblock %}

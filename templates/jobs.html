@@ -2,102 +2,191 @@
 {% block title %}Jobs | HireFlow{% endblock %}
 
 {% block content %}
+<style>
+    /* Professional UI Enhancements */
+    .job-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+    }
+    .job-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .carousel-item {
+        border-radius: 16px;
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.5em 1em;
+        border-radius: 50px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .section-divider {
+        height: 3px;
+        width: 50px;
+        background: #0d6efd;
+        margin-bottom: 1.5rem;
+        border-radius: 2px;
+    }
+    .btn-apply {
+        padding: 8px 24px;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+</style>
 
-<!-- 🔹 TOP MOTIVATION / COMPANY CAROUSEL -->
-<div id="jobHeroCarousel" class="carousel slide mb-4 shadow rounded overflow-hidden" data-bs-ride="carousel">
-    <div class="carousel-inner">
-
-        <div class="carousel-item active">
-            <div class="p-5 text-white" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
-                <h3>Build Your Career with Top Companies 🚀</h3>
-                <p class="mb-0">Apply to jobs that match your skills and ambition</p>
+<div class="container py-4">
+    <div id="jobHeroCarousel" class="carousel slide mb-5 shadow-lg overflow-hidden" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <div class="p-5 text-white" style="background: linear-gradient(135deg, #0d6efd 0%, #002d72 100%); min-height: 220px;">
+                    <div class="py-3">
+                        <h2 class="display-6 fw-bold">Build Your Career with Verified Companies 🚀</h2>
+                        <p class="lead opacity-75">Admin-approved roles from the world's most trusted employers.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="p-5 text-white" style="background: linear-gradient(135deg, #198754 0%, #0d3d26 100%); min-height: 220px;">
+                    <div class="py-3">
+                        <h2 class="display-6 fw-bold">Explore High-Demand Opportunities 💼</h2>
+                        <p class="lead opacity-75">Curated jobs specifically tailored for your career growth.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="p-5 text-white" style="background: linear-gradient(135deg, #6f42c1 0%, #3a1c71 100%); min-height: 220px;">
+                    <div class="py-3">
+                        <h2 class="display-6 fw-bold">Apply Smart. Get Hired ✅</h2>
+                        <p class="lead opacity-75">Streamlined tracking to keep you updated on every application.</p>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="carousel-item">
-            <div class="p-5 text-white" style="background: linear-gradient(135deg, #198754, #146c43);">
-                <h3>Opportunities That Shape Your Future 💼</h3>
-                <p class="mb-0">Trusted companies are hiring through HireFlow</p>
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <h1 class="fw-bold mb-0">Job Board</h1>
+            <p class="text-muted mb-0">Find your next career move at HireFlow.</p>
+        </div>
+        <div class="pb-1">
+            <a class="btn btn-light border shadow-sm px-3 me-2" href="/my-applications">
+                <i class="bi bi-briefcase me-1"></i> My Applications
+            </a>
+            <a class="btn btn-outline-danger px-3" href="/logout">
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <h4 class="fw-bold text-dark d-flex align-items-center">
+            <span class="badge bg-primary-soft text-primary me-2"><i class="bi bi-patch-check"></i></span>
+            Verified Company Jobs
+        </h4>
+        <div class="section-divider"></div>
+    </div>
+
+    <div class="row">
+        {% if company_jobs %}
+            {% for job in company_jobs %}
+            <div class="col-12 mb-4">
+                <div class="card job-card border-0 shadow-sm border-start border-primary border-5">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="fw-bold mb-1 text-dark">{{ job.title }}</h5>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="text-primary fw-semibold me-2">{{ job.company }}</span>
+                                    <span class="text-muted small">• Verified Partner</span>
+                                </div>
+                            </div>
+
+                            {% if job.id in applications %}
+                                {% if applications[job.id] == "Applied" %}
+                                    <span class="status-badge bg-warning text-dark fw-bold">In Review</span>
+                                {% elif applications[job.id] == "Shortlisted" %}
+                                    <span class="status-badge bg-success text-white fw-bold">Shortlisted ✅</span>
+                                {% elif applications[job.id] == "Rejected" %}
+                                    <span class="status-badge bg-danger text-white fw-bold">Rejected ❌</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <p class="text-secondary my-3" style="max-width: 800px; line-height: 1.6;">
+                            {{ job.description }}
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted"><i class="bi bi-clock me-1"></i> Posted recently</small>
+                            {% if job.id not in applications %}
+                                <a class="btn btn-primary btn-apply" href="/apply/{{ job.id }}">
+                                    Apply Now
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted italic">No verified company jobs available at the moment.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <hr class="my-5 opacity-25">
+
+    <div class="mb-4">
+        <h4 class="fw-bold text-dark">🌟 Open Platform Jobs</h4>
+        <div class="section-divider bg-success"></div>
+    </div>
+
+    <div class="row">
+        {% for job in platform_jobs %}
+        <div class="col-md-6 mb-4">
+            <div class="card job-card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="badge bg-dark-subtle text-dark px-3 py-2 rounded-pill">{{ job.company }}</span>
+                        {% if job.id in applications %}
+                            {% if applications[job.id] == "Applied" %}
+                                <span class="status-badge bg-warning text-dark fw-bold">Applied</span>
+                            {% elif applications[job.id] == "Shortlisted" %}
+                                <span class="status-badge bg-success text-white fw-bold">Selected ✅</span>
+                            {% elif applications[job.id] == "Rejected" %}
+                                <span class="status-badge bg-danger text-white fw-bold">Rejected ❌</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <h5 class="fw-bold mb-2">{{ job.title }}</h5>
+                    <p class="text-muted small flex-grow-1">{{ job.description }}</p>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        {% if job.id not in applications %}
+                            <a class="btn btn-success btn-apply w-100" href="/apply/{{ job.id }}">
+                                Quick Apply
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-secondary btn-apply w-100" disabled>Application Sent</button>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="carousel-item">
-            <div class="p-5 text-white" style="background: linear-gradient(135deg, #6f42c1, #59339d);">
-                <h3>Apply. Get Shortlisted. Get Hired ✅</h3>
-                <p class="mb-0">Your journey to success starts here</p>
-            </div>
-        </div>
-
+        {% endfor %}
     </div>
 </div>
 
 <script>
-    new bootstrap.Carousel('#jobHeroCarousel', {
-        interval: 2000,
+    const carousel = new bootstrap.Carousel('#jobHeroCarousel', {
+        interval: 3500,
+        pause: 'hover',
         ride: 'carousel'
     });
 </script>
-
-<!-- 🔹 HEADER ACTIONS -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">Available Jobs</h2>
-
-    <div>
-        <a class="btn btn-outline-secondary btn-sm" href="/applications">
-            My Applications
-        </a>
-        <a class="btn btn-danger btn-sm ms-2" href="/logout">
-            Logout
-        </a>
-    </div>
-</div>
-
-<!-- 🔹 JOB CARDS -->
-{% for job in jobs %}
-<div class="card mb-4 shadow border-0">
-    <div class="card-body">
-
-        <div class="d-flex justify-content-between">
-            <div>
-                <h5 class="fw-bold">{{ job.title }}</h5>
-                <span class="badge bg-dark">{{ job.company }}</span>
-            </div>
-
-            {% if job.id in applications %}
-                {% if applications[job.id] == "Applied" %}
-                    <span class="badge bg-warning text-dark align-self-start">
-                        In Progress
-                    </span>
-                {% elif applications[job.id] == "Shortlisted" %}
-                    <span class="badge bg-success align-self-start">
-                        Selected ✅
-                    </span>
-                {% elif applications[job.id] == "Rejected" %}
-                    <span class="badge bg-danger align-self-start">
-                        Rejected ❌
-                    </span>
-                {% endif %}
-            {% endif %}
-        </div>
-
-        <p class="text-muted mt-3">
-            {{ job.description }}
-        </p>
-
-        <!-- 🔹 ACTION BUTTONS -->
-        {% if job.id not in applications %}
-            <a class="btn btn-primary btn-sm" href="/apply/{{ job.id }}">
-                Apply Now
-            </a>
-
-        {% elif applications[job.id] == "Applied" %}
-            <a class="btn btn-outline-danger btn-sm" href="/withdraw/{{ job.id }}">
-                Withdraw Application
-            </a>
-        {% endif %}
-
-    </div>
-</div>
-{% endfor %}
-
 {% endblock %}

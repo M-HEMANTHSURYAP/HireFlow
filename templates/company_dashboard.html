@@ -2,44 +2,159 @@
 {% block title %}Company Dashboard | HireFlow{% endblock %}
 
 {% block content %}
-<h2>Company Dashboard</h2>
+<style>
+    .company-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    .stats-bar {
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    .job-table-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.05);
+        background: #ffffff;
+    }
+    .table-company thead th {
+        background: #ffffff;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 20px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    .table-company tbody td {
+        padding: 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+    }
+    .job-title-cell {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 1rem;
+    }
+    .badge-status {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.3px;
+    }
+    .btn-action-main {
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .btn-action-main:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .skill-tag {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin-right: 4px;
+    }
+</style>
 
-<div class="mb-3">
-    <a href="/company/add-job" class="btn btn-primary btn-sm">+ Post Job</a>
-    <a href="/company/shortlisted" class="btn btn-success btn-sm ms-2">
-        Shortlisted Candidates
-    </a>
-    <a class="btn btn-danger btn-sm float-end" href="/logout">Logout</a>
-</div>
+<div class="container py-4 company-container">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h5 class="text-primary fw-bold mb-1">Employer Console</h5>
+            <h2 class="fw-bold text-dark">Welcome Back, {{ session['username'] }}</h2>
+        </div>
+        <div>
+            <a class="btn btn-outline-danger btn-sm px-3" href="/logout">
+                <i class="bi bi-power me-1"></i> Logout
+            </a>
+        </div>
+    </div>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Job</th>
-            <th>Experience</th>
-            <th>Skills</th>
-            <th>Status</th>
-        </tr>
-    </thead>
+    <div class="stats-bar p-3 mb-5 d-flex align-items-center justify-content-between shadow-sm">
+        <div class="d-flex gap-3">
+            <a href="/company/add-job" class="btn btn-primary btn-action-main">
+                <i class="bi bi-plus-lg me-2"></i> Post a New Job
+            </a>
+            <a href="/company/shortlisted" class="btn btn-success btn-action-main">
+                <i class="bi bi-people me-2"></i> View Shortlisted
+            </a>
+        </div>
+        <div class="text-end me-3">
+            <span class="text-muted small d-block">Active Postings</span>
+            <span class="h4 fw-bold mb-0 text-dark">{{ jobs|length }}</span>
+        </div>
+    </div>
 
-    <tbody>
-    {% for job in jobs %}
-        <tr>
-            <td>{{ job.title }}</td>
-            <td>{{ job.experience }}</td>
-            <td>{{ job.skills }}</td>
-            <td>
-                {% if job.status == "Pending" %}
-                    <span class="badge bg-warning">Pending</span>
-                {% elif job.status == "Approved" %}
-                    <span class="badge bg-success">Approved</span>
-                {% else %}
-                    <span class="badge bg-danger">Rejected</span>
+    <div class="card job-table-card">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-list-task me-2 text-primary"></i>Your Job Postings</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-company mb-0">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Experience</th>
+                        <th>Skills Required</th>
+                        <th class="text-center">Approval Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for job in jobs %}
+                    <tr>
+                        <td class="job-title-cell">
+                            {{ job.title }}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-mortarboard me-2 text-muted"></i>
+                                {{ job.experience }}
+                            </div>
+                        </td>
+                        <td>
+                            {% for skill in job.skills.split(',') %}
+                                <span class="skill-tag">{{ skill.strip() }}</span>
+                            {% endfor %}
+                        </td>
+                        <td class="text-center">
+                            {% if job.status == "Pending" %}
+                                <span class="badge-status bg-warning-subtle text-warning border border-warning-subtle">
+                                    <i class="bi bi-hourglass-split me-1"></i> PENDING
+                                </span>
+                            {% elif job.status == "Approved" %}
+                                <span class="badge-status bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-check-circle-fill me-1"></i> APPROVED
+                                </span>
+                            {% else %}
+                                <span class="badge-status bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="bi bi-x-octagon-fill me-1"></i> REJECTED
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                {% if not jobs %}
+                <tr>
+                    <td colspan="4" class="text-center py-5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" alt="Empty" style="width: 80px; opacity: 0.5;" class="mb-3">
+                        <p class="text-muted">You haven't posted any jobs yet. Start by clicking "Post a New Job".</p>
+                    </td>
+                </tr>
                 {% endif %}
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

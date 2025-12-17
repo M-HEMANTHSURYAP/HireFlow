@@ -4,36 +4,63 @@
 
 {% block content %}
 
-<div class="container mt-5">
-    <div class="card shadow mx-auto" style="max-width: 500px;">
-        <div class="card-body">
+<div class="container mt-5 mb-5">
+    <div class="card shadow-lg mx-auto border-0" style="max-width: 520px;">
+        <div class="card-body p-4">
 
-            <h4 class="text-center mb-3">Apply for {{ job.title }}</h4>
-            <p class="text-muted text-center">{{ job.company }}</p>
+            <!-- Job Info -->
+            <div class="text-center mb-4">
+                <h4 class="fw-bold">{{ job.title }}</h4>
+                <span class="badge bg-dark">{{ job.company }}</span>
+                <p class="text-muted mt-2 mb-0">
+                    Submit your details to apply for this role
+                </p>
+            </div>
 
+            <hr>
+
+            <!-- Application Form -->
             <form method="post" enctype="multipart/form-data">
 
+                <!-- Email -->
                 <div class="mb-3">
-                    <label class="form-label">Email Address</label>
-                    <input type="email"
-                           class="form-control"
-                           name="email"
-                           placeholder="example@email.com"
-                           required>
+                    <label class="form-label fw-semibold">
+                        Email Address
+                    </label>
+                    <input
+                        type="email"
+                        class="form-control"
+                        name="email"
+                        placeholder="yourname@example.com"
+                        required>
                 </div>
 
+                <!-- Resume Upload -->
                 <div class="mb-3">
-                    <label class="form-label">Upload Resume (PDF only)</label>
-                    <input type="file"
-                           class="form-control"
-                           name="resume"
-                           accept=".pdf"
-                           required>
+                    <label class="form-label fw-semibold">
+                        Upload Resume
+                    </label>
+                    <input
+                        type="file"
+                        class="form-control"
+                        name="resume"
+                        accept=".pdf"
+                        required>
+
+                    <div class="form-text">
+                        Only PDF files are allowed. Max size recommended: 2MB
+                    </div>
                 </div>
 
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary">Submit Application</button>
-                    <a href="/jobs" class="btn btn-outline-secondary">Cancel</a>
+                <!-- Buttons -->
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-primary">
+                        🚀 Submit Application
+                    </button>
+
+                    <a href="/jobs" class="btn btn-outline-secondary">
+                        Cancel & Go Back
+                    </a>
                 </div>
 
             </form>

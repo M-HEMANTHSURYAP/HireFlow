@@ -2,32 +2,131 @@
 {% block title %}Post Job | HireFlow{% endblock %}
 
 {% block content %}
-<h2>Post a New Job</h2>
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 2rem auto;
+    }
+    .post-job-card {
+        border: none;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .form-control, .form-select {
+        border-radius: 10px;
+        padding: 12px 15px;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus {
+        background-color: #ffffff;
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+    .btn-submit-job {
+        background-color: #10b981;
+        border: none;
+        padding: 12px 25px;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    .btn-submit-job:hover {
+        background-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+    }
+    .input-hint {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+    .header-accent {
+        width: 50px;
+        height: 4px;
+        background: #10b981;
+        border-radius: 2px;
+        margin-bottom: 1.5rem;
+    }
+</style>
 
-<form method="post" class="card p-4 shadow-sm">
-
-    <div class="mb-3">
-        <label class="form-label">Job Title</label>
-        <input class="form-control" name="title" required>
+<div class="container form-container">
+    <div class="mb-4">
+        <a href="/company" class="btn btn-link text-decoration-none p-0 text-muted mb-3">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+        <h2 class="fw-bold text-dark mb-1">Create Job Posting</h2>
+        <p class="text-muted">Fill in the details below. Your post will be visible once approved by an admin.</p>
+        <div class="header-accent"></div>
     </div>
 
-    <div class="mb-3">
-        <label class="form-label">Required Skills</label>
-        <input class="form-control" name="skills" placeholder="Python, Flask, SQL" required>
-    </div>
+    <form method="post" class="card post-job-card p-4 p-md-5">
 
-    <div class="mb-3">
-        <label class="form-label">Experience</label>
-        <input class="form-control" name="experience" placeholder="0-2 years / 3+ years" required>
-    </div>
+        <div class="mb-4">
+            <label class="form-label text-uppercase letter-spacing-1">Job Title</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-briefcase"></i>
+                </span>
+                <input class="form-control border-start-0"
+                       name="title"
+                       placeholder="e.g. Senior Backend Developer"
+                       required>
+            </div>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Job Description</label>
-        <textarea class="form-control" name="description" rows="4" required></textarea>
-    </div>
+        <div class="mb-4">
+            <label class="form-label text-uppercase letter-spacing-1">Required Skills</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-code-slash"></i>
+                </span>
+                <input class="form-control border-start-0"
+                       name="skills"
+                       placeholder="e.g. Python, Flask, SQL"
+                       required>
+            </div>
+            <div class="input-hint">Separate skills with commas for better visibility.</div>
+        </div>
 
-    <button class="btn btn-success">Send for Admin Approval</button>
-    <a href="/company" class="btn btn-outline-secondary ms-2">Cancel</a>
+        <div class="mb-4">
+            <label class="form-label text-uppercase letter-spacing-1">Experience Level</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                    <i class="bi bi-mortarboard"></i>
+                </span>
+                <input class="form-control border-start-0"
+                       name="experience"
+                       placeholder="e.g. 2-5 years / Entry Level"
+                       required>
+            </div>
+        </div>
 
-</form>
+        <div class="mb-4">
+            <label class="form-label text-uppercase letter-spacing-1">Detailed Description</label>
+            <textarea class="form-control"
+                      name="description"
+                      rows="6"
+                      placeholder="Outline the role, responsibilities, and company culture..."
+                      required></textarea>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+            <a href="/company" class="btn btn-light px-4 py-2 border fw-semibold">Discard</a>
+            <button type="submit" class="btn btn-success btn-submit-job px-5">
+                <i class="bi bi-send-fill me-2"></i> Submit for Approval
+            </button>
+        </div>
+
+    </form>
+</div>
+
 {% endblock %}
