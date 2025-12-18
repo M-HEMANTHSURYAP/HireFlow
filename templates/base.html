@@ -25,11 +25,25 @@
             </button>
 
             <ul class="dropdown-menu dropdown-menu-end">
+
+                {# ✅ USER ONLY: My Applications #}
+                {% if current_user.role == "user" %}
                 <li>
-                    <a class="dropdown-item" href="/my-applications">
+                    <a class="dropdown-item" href="/applications">
                         My Applications
                     </a>
                 </li>
+                {% endif %}
+
+                {# ✅ COMPANY ONLY: Open Platform Job Requests #}
+                {% if current_user.role == "company" %}
+                <li>
+                    <a class="dropdown-item" href="/company/platform-applications">
+                        Open Platform Job Requests
+                    </a>
+                </li>
+                {% endif %}
+
                 <li>
                     <a class="dropdown-item" href="/profile">
                         My Profile
@@ -45,7 +59,9 @@
                         Settings
                     </a>
                 </li>
+
                 <li><hr class="dropdown-divider"></li>
+
                 <li>
                     <a class="dropdown-item text-danger" href="/logout">
                         Sign out

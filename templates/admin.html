@@ -48,15 +48,6 @@
         text-decoration: none;
         transition: 0.3s;
     }
-    .btn-view-resume {
-        color: #0d6efd;
-        background-color: rgba(13, 110, 253, 0.05);
-        border: 1px solid rgba(13, 110, 253, 0.1);
-    }
-    .btn-view-resume:hover {
-        background-color: #0d6efd;
-        color: white;
-    }
 </style>
 
 <div class="container py-4">
@@ -76,14 +67,14 @@
                 <i class="bi bi-clipboard-check me-1"></i> Company Job Requests
             </a>
             <a href="/admin/history" class="nav-pill-custom text-dark bg-light">
-                <i class="bi bi-clock-history me-1"></i> Application History
+                <i class="bi bi-clock-history me-1"></i> User/Candidate Applications
             </a>
         </div>
     </div>
 
     <div class="mb-3 d-flex align-items-center">
         <h5 class="fw-bold mb-0">Pending Reviews</h5>
-        <span class="badge bg-dark ms-2">{{ applications|length }}</span>
+        <span class="badge bg-dark ms-2">{{ job_requests|length }}</span>
     </div>
 
     <div class="table-container border">
@@ -91,59 +82,54 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Candidate</th>
-                        <th>Target Role</th>
-                        <th>Contact Email</th>
-                        <th class="text-center">Documentation</th>
-                        <th class="text-center">Current Status</th>
-                        <th class="text-end">Management Actions</th>
+                        <th>Company</th>
+                        <th>Position Details</th>
+                        <th>Required Skills</th>
+                        <th>Experience</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                {% for app, user, job in applications %}
+                {% for job in job_requests %}
                 <tr>
                     <td>
-                        <div class="fw-bold text-dark">{{ user.username }}</div>
-                        <small class="text-muted">ID: #{{ app.id }}</small>
+                        <div class="fw-bold text-dark">{{ job.company_username }}</div>
+                        <small class="text-muted">Company Request</small>
                     </td>
+
                     <td>
                         <span class="text-primary fw-semibold">{{ job.title }}</span>
+                        <div class="small text-muted mt-1">
+                            {{ job.description }}
+                        </div>
                     </td>
-                    <td>{{ app.email }}</td>
-                    <td class="text-center">
-                        <a class="btn btn-sm btn-view-resume"
-                           href="{{ url_for('view_resume', filename=app.resume_file) }}"
-                           target="_blank">
-                           <i class="bi bi-file-earmark-pdf me-1"></i> View CV
-                        </a>
-                    </td>
-                    <td class="text-center">
-                        <span class="status-badge-admin bg-info-subtle text-info text-uppercase">
-                            {{ app.status }}
-                        </span>
-                    </td>
-                    <td class="text-end">
-                        <div class="btn-group shadow-sm" role="group">
-                            <a class="btn btn-success btn-sm btn-action px-3"
-                               href="{{ url_for('update_status', app_id=app.id, status='Shortlisted') }}">
-                               <i class="bi bi-check2 me-1"></i> Shortlist
-                            </a>
 
+                    <td>{{ job.skills }}</td>
+
+                    <td>{{ job.experience }}</td>
+
+                    <td class="text-end">
+                        <div class="btn-group shadow-sm">
+                            <a class="btn btn-success btn-sm btn-action px-3"
+                               href="/admin/job-action/{{ job.id }}/approve">
+                               <i class="bi bi-check2 me-1"></i> Approve
+                            </a>
                             <a class="btn btn-danger btn-sm btn-action px-3"
-                               href="{{ url_for('update_status', app_id=app.id, status='Rejected') }}">
+                               href="/admin/job-action/{{ job.id }}/reject">
                                <i class="bi bi-x-lg me-1"></i> Reject
                             </a>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
-                {% if not applications %}
+
+                {% if not job_requests %}
                 <tr>
-                    <td colspan="6" class="text-center py-5">
+                    <td colspan="5" class="text-center py-5">
                         <div class="text-muted">
                             <i class="bi bi-inbox display-4 d-block mb-3"></i>
-                            No pending applications to review.
+                            No pending job requests to review.
                         </div>
                     </td>
                 </tr>

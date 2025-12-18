@@ -58,6 +58,7 @@ class Application(db.Model):
     email = db.Column(db.String(120))
     resume_file = db.Column(db.String(200))
     status = db.Column(db.String(50), default="Applied")
+    archived_by_user = db.Column(db.Boolean, default=False)
 
 
 @login_manager.user_loader
@@ -131,23 +132,34 @@ def login():
     return render_template('login.html')
 
 # ================= USER =================
-
 @app.route('/jobs')
 @login_required
 def jobs():
     company_jobs = Job.query.filter_by(job_type="company").all()
     platform_jobs = Job.query.filter_by(job_type="platform").all()
 
+    # Show only non-archived applications on jobs page
     applications = {
         a.job_id: a.status
-        for a in Application.query.filter_by(user_id=current_user.id).all()
+        for a in Application.query
+        .filter_by(user_id=current_user.id, archived_by_user=False)
+        .all()
     }
+
+    # ✅ ADDITION: track ALL jobs ever applied (including archived)
+    applied_job_ids = [
+        a.job_id
+        for a in Application.query
+        .filter_by(user_id=current_user.id)
+        .all()
+    ]
 
     return render_template(
         'jobs.html',
         company_jobs=company_jobs,
         platform_jobs=platform_jobs,
-        applications=applications
+        applications=applications,
+        applied_job_ids=applied_job_ids   # ✅ PASS TO TEMPLATE
     )
 
 
@@ -155,6 +167,16 @@ def jobs():
 @login_required
 def apply(job_id):
     job = Job.query.get_or_404(job_id)
+
+    # 🔒 HARD BLOCK: prevent re-apply even if archived
+    existing = Application.query.filter_by(
+        user_id=current_user.id,
+        job_id=job_id
+    ).first()
+
+    if existing:
+        flash("You have already applied for this job", "warning")
+        return redirect(url_for('jobs'))
 
     if request.method == 'POST':
         file = request.files['resume']
@@ -164,20 +186,14 @@ def apply(job_id):
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-            # prevent duplicate applications
-            existing = Application.query.filter_by(
+            db.session.add(Application(
                 user_id=current_user.id,
-                job_id=job_id
-            ).first()
-
-            if not existing:
-                db.session.add(Application(
-                    user_id=current_user.id,
-                    job_id=job_id,
-                    email=request.form['email'],
-                    resume_file=filename
-                ))
-                db.session.commit()
+                job_id=job_id,
+                email=request.form['email'],
+                resume_file=filename,
+                archived_by_user=False
+            ))
+            db.session.commit()
 
             flash("Applied successfully", "success")
             return redirect(url_for('jobs'))
@@ -185,6 +201,61 @@ def apply(job_id):
         flash("Only PDF allowed", "danger")
 
     return render_template('resume.html', job=job)
+
+
+@app.route('/applications')
+@login_required
+def user_applications():
+    # Show ALL applications (including archived) in My Applications
+    applications = db.session.query(
+        Application, Job
+    ).join(Job, Application.job_id == Job.id) \
+     .filter(Application.user_id == current_user.id) \
+     .all()
+
+    return render_template(
+        'user_applications.html',
+        applications=applications
+    )
+
+
+@app.route('/withdraw/<int:job_id>', methods=['POST'])
+@login_required
+def withdraw(job_id):
+    application = Application.query.filter_by(
+        user_id=current_user.id,
+        job_id=job_id
+    ).first_or_404()
+
+    # 🚫 Cannot withdraw after shortlist
+    if application.status == "Shortlisted":
+        flash("Cannot withdraw after being shortlisted", "danger")
+        return redirect(url_for('jobs'))
+
+    # Withdraw = delete record
+    db.session.delete(application)
+    db.session.commit()
+
+    flash("Application withdrawn successfully", "success")
+    return redirect(url_for('jobs'))
+
+
+@app.route('/archive/<int:job_id>', methods=['POST'])
+@login_required
+def archive(job_id):
+    application = Application.query.filter_by(
+        user_id=current_user.id,
+        job_id=job_id,
+        status="Shortlisted",
+        archived_by_user=False
+    ).first_or_404()
+
+    # Archive = hide from jobs page ONLY
+    application.archived_by_user = True
+    db.session.commit()
+
+    flash("Shortlisted message removed from view", "success")
+    return redirect(url_for('jobs'))
 
 # ================= COMPANY =================
 
@@ -237,12 +308,34 @@ def company_shortlisted():
         "company_shortlisted.html",
         applications=applications
     )
+@app.route('/company/platform-applications')
+@login_required
+@company_required
+def company_platform_applications():
+    applications = db.session.query(
+        Application, User, Job
+    ).join(User, Application.user_id == User.id) \
+     .join(Job, Application.job_id == Job.id) \
+     .filter(
+         Job.job_type == "platform",
+         Job.company == "HireFlow"
+     ).all()
+
+    return render_template(
+        'company_applications.html',
+        applications=applications
+    )
+
 @app.route('/company/applications')
 @login_required
 @company_required
 def company_applications():
-    # Get jobs posted by this company
-    jobs = Job.query.filter_by(company=current_user.username).all()
+    # Get ONLY company-posted jobs (exclude platform jobs)
+    jobs = Job.query.filter_by(
+        company=current_user.username,
+        job_type="company"
+    ).all()
+
     job_ids = [job.id for job in jobs]
 
     # Get applications only for those jobs
@@ -258,20 +351,48 @@ def company_applications():
         applications=applications
     )
 
+@app.route('/company/update_status/<int:app_id>/<status>')
+@login_required
+@company_required
+def company_update_status(app_id, status):
+    application = Application.query.get_or_404(app_id)
+    job = Job.query.get_or_404(application.job_id)
+
+    # ✅ ALLOW:
+    # 1. Company-owned jobs
+    # 2. Platform jobs (HireFlow)
+    if job.job_type == "company" and job.company != current_user.username:
+        return "Unauthorized", 403
+
+    if status not in ["Shortlisted", "Rejected"]:
+        return "Invalid status", 400
+
+    application.status = status
+    db.session.commit()
+
+    flash(f"Candidate {status}", "success")
+
+    # 🔁 Redirect back correctly
+    if job.job_type == "platform":
+        return redirect(url_for('company_platform_applications'))
+
+    return redirect(url_for('company_applications'))
+
 # ================= ADMIN =================
 
 @app.route('/admin')
 @login_required
 @admin_required
 def admin_dashboard():
-    applications = db.session.query(
-        Application, User, Job
-    ).join(User, Application.user_id == User.id)\
-     .join(Job, Application.job_id == Job.id)\
-     .filter(Application.status == "Applied")\
-     .all()
 
-    return render_template('admin.html', applications=applications)
+    # ONLY pending company job requests
+    job_requests = JobRequest.query.filter_by(status="Pending").all()
+
+    return render_template(
+        'admin.html',
+        job_requests=job_requests
+    )
+
 
 
 # ✅ FIXED: ADMIN HISTORY ROUTE
@@ -283,13 +404,13 @@ def admin_history():
         Application, User, Job
     ).join(User, Application.user_id == User.id)\
      .join(Job, Application.job_id == Job.id)\
-     .filter(Application.status != "Applied")\
      .all()
 
     return render_template(
         'admin_history.html',
         applications=applications
     )
+
 
 
 @app.route('/admin/job-requests')

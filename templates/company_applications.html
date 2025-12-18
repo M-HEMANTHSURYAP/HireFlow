@@ -41,91 +41,70 @@
         border-radius: 8px;
         font-weight: 600;
         font-size: 0.85rem;
-        transition: all 0.2s;
         border: 1px solid #e2e8f0;
-    }
-    .btn-resume:hover {
-        background-color: #f8fafc;
-        border-color: #0d6efd;
-        color: #0d6efd;
     }
     .status-indicator {
         font-size: 0.75rem;
         font-weight: 700;
         padding: 6px 12px;
         border-radius: 50px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .empty-state {
-        padding: 5rem 1rem;
-        text-align: center;
     }
 </style>
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-1">Talent Pipeline 📄</h2>
-            <p class="text-muted mb-0">Review and track candidates who applied for your roles.</p>
+            <h2 class="fw-bold mb-1">Talent Pipeline 📄</h2>
+            <p class="text-muted mb-0">Candidates who applied to your jobs</p>
         </div>
-        <a href="/company" class="btn btn-light border px-4 rounded-pill shadow-sm">
-            <i class="bi bi-chevron-left me-1"></i> Dashboard
+        <a href="/company" class="btn btn-light border rounded-pill">
+            ← Dashboard
         </a>
     </div>
 
     {% if applications %}
     <div class="candidate-card-container">
         <div class="table-responsive">
-            <table class="table table-applicants mb-0">
+            <table class="table mb-0">
                 <thead>
                     <tr>
-                        <th>Candidate Info</th>
-                        <th>Targeted Position</th>
-                        <th>Communication</th>
-                        <th class="text-center">Documents</th>
-                        <th class="text-end">Current Phase</th>
+                        <th>Candidate</th>
+                        <th>Job</th>
+                        <th>Email</th>
+                        <th class="text-center">Resume</th>
+                        <th class="text-end">Status</th>
                     </tr>
                 </thead>
-
                 <tbody>
                 {% for app, user, job in applications %}
                     <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: 600;">
-                                    {{ user.username[0] | upper }}
-                                </div>
-                                <div>
-                                    <div class="candidate-name">{{ user.username }}</div>
-                                    <small class="text-muted">Applied via HireFlow</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="job-pill">{{ job.title }}</span>
-                        </td>
-                        <td>
-                            <div class="text-dark small"><i class="bi bi-envelope me-2 text-muted"></i>{{ app.email }}</div>
-                        </td>
+                        <td class="fw-semibold">{{ user.username }}</td>
+                        <td><span class="job-pill">{{ job.title }}</span></td>
+                        <td>{{ app.email }}</td>
                         <td class="text-center">
                             <a href="{{ url_for('view_resume', filename=app.resume_file) }}"
-                               class="btn btn-sm btn-resume px-3"
-                               target="_blank">
-                               <i class="bi bi-file-earmark-pdf text-danger me-1"></i> View CV
+                               target="_blank"
+                               class="btn btn-sm btn-outline-primary">
+                               View
                             </a>
                         </td>
                         <td class="text-end">
                             {% if app.status == "Applied" %}
-                                <span class="status-indicator bg-warning-subtle text-warning border border-warning-subtle">Applied</span>
+                                <span class="status-indicator bg-warning-subtle text-warning">Applied</span>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('company_update_status', app_id=app.id, status='Shortlisted') }}"
+                                       class="btn btn-sm btn-success me-1">
+                                       Shortlist
+                                    </a>
+                                    <a href="{{ url_for('company_update_status', app_id=app.id, status='Rejected') }}"
+                                       class="btn btn-sm btn-danger">
+                                       Reject
+                                    </a>
+                                </div>
                             {% elif app.status == "Shortlisted" %}
-                                <span class="status-indicator bg-success-subtle text-success border border-success-subtle">
-                                    <i class="bi bi-check-circle-fill me-1"></i> Shortlisted
-                                </span>
+                                <span class="status-indicator bg-success-subtle text-success">Shortlisted</span>
                             {% elif app.status == "Rejected" %}
-                                <span class="status-indicator bg-danger-subtle text-danger border border-danger-subtle">
-                                    <i class="bi bi-x-circle-fill me-1"></i> Rejected
-                                </span>
+                                <span class="status-indicator bg-danger-subtle text-danger">Rejected</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -135,16 +114,9 @@
         </div>
     </div>
     {% else %}
-    <div class="candidate-card-container empty-state">
-        <div class="mb-3">
-            <i class="bi bi-people text-light display-1"></i>
+        <div class="text-center text-muted py-5">
+            No applications yet.
         </div>
-        <h4 class="fw-bold text-dark">No Candidates Found</h4>
-        <p class="text-muted mx-auto" style="max-width: 400px;">
-            It looks like no one has applied to your job postings yet. Try optimizing your job descriptions to attract more talent.
-        </p>
-        <a href="/company/add-job" class="btn btn-primary mt-2 px-4">Post Another Job</a>
-    </div>
     {% endif %}
 </div>
 

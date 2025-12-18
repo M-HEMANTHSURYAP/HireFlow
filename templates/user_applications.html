@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}My Applications | HireFlow{% endblock %}
+
+{% block content %}
+<style>
+    .app-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .status-card {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: none;
+        overflow: hidden;
+    }
+    .table-apps thead th {
+        background-color: #f8fafc;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        padding: 1.25rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    .table-apps tbody td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .company-name {
+        color: #6366f1;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .job-title-text {
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    .status-pill {
+        padding: 6px 14px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+    .btn-action-view {
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+    }
+    .btn-action-view:hover {
+        background: #f1f5f9;
+        color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .empty-illustration {
+        width: 120px;
+        opacity: 0.6;
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="container py-5 app-container">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Application Tracker</h2>
+            <p class="text-muted mb-0">Stay updated on your professional journey.</p>
+        </div>
+        <a href="/jobs" class="btn btn-outline-primary px-4 rounded-pill fw-bold">
+            <i class="bi bi-briefcase me-2"></i> Find More Jobs
+        </a>
+    </div>
+
+    {% if applications %}
+    <div class="card status-card">
+        <div class="table-responsive">
+            <table class="table table-apps mb-0">
+                <thead>
+                    <tr>
+                        <th>Position Details</th>
+                        <th>Hiring Company</th>
+                        <th class="text-center">Current Status</th>
+                        <th class="text-end px-4">Submitted Documents</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app, job in applications %}
+                    <tr>
+                        <td>
+                            <div class="job-title-text">{{ job.title }}</div>
+                            <small class="text-muted">Applied on {{ app.applied_date if app.applied_date else 'Recent' }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded p-2 me-2">
+                                    <i class="bi bi-building text-primary"></i>
+                                </div>
+                                <span class="company-name">{{ job.company }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if app.status == "Applied" %}
+                                <span class="status-pill bg-warning-subtle text-warning border border-warning-subtle">
+                                    <i class="bi bi-clock-history me-1"></i> In Review
+                                </span>
+                            {% elif app.status == "Shortlisted" %}
+                                <span class="status-pill bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-patch-check-fill me-1"></i> Shortlisted
+                                </span>
+                            {% elif app.status == "Rejected" %}
+                                <span class="status-pill bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Declined
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end px-4">
+                            <a href="/resume/{{ app.resume_file }}"
+                               target="_blank"
+                               class="btn btn-sm btn-action-view px-3">
+                                <i class="bi bi-file-earmark-text me-1"></i> View Resume
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-folder2-open display-1 text-light d-block mb-3"></i>
+        <h4 class="fw-bold text-dark">No Applications Found</h4>
+        <p class="text-muted mx-auto" style="max-width: 400px;">
+            You haven't started any applications yet. Your dream job is waiting for you on the job board!
+        </p>
+        <a href="/jobs" class="btn btn-primary btn-lg px-5 mt-3 shadow-sm rounded-pill">
+            Start Exploring
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
