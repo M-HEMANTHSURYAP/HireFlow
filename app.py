@@ -481,28 +481,30 @@ def update_status(app_id, status):
     application.status = status
     db.session.commit()
 
-    # ✅ STEP 3A: CREATE NOTIFICATION (ONLY ON SHORTLIST)
+    # ✅ ONLY if shortlisted
     if status == "Shortlisted":
         job = Job.query.get(application.job_id)
         user = User.query.get(application.user_id)
 
-        message = (
-            f"🎉 CONGRATS! Dear {user.username}, "
-            f"your application for '{job.title}' has been shortlisted."
-        )
+        # 🔐 SAFETY CHECK (THIS FIXES 500 ERROR)
+        if job and user:
+            message = (
+                f"🎉 CONGRATS! Dear {user.username}, "
+                f"your application for '{job.title}' has been shortlisted."
+            )
 
-        db.session.add(Notification(
-            user_id=user.id,
-            message=message
-        ))
-        db.session.commit()
+            db.session.add(Notification(
+                user_id=user.id,
+                message=message
+            ))
+            db.session.commit()
 
-        # ✅ STEP 3B: SEND EMAIL
-        try:
-            msg = Message(
-                subject="🎉 You’ve been Shortlisted – HireCoreX",
-                recipients=[application.email],
-                body=f"""
+            # 📧 Email (safe)
+            try:
+                msg = Message(
+                    subject="🎉 You’ve been Shortlisted – HireCoreX",
+                    recipients=[application.email],
+                    body=f"""
 Dear {user.username},
 
 Congratulations! 🎉
@@ -514,10 +516,10 @@ The hiring team will contact you soon.
 Best regards,
 HireCoreX Team
 """
-            )
-            mail.send(msg)
-        except Exception as e:
-            print("Email error:", e)
+                )
+                mail.send(msg)
+            except Exception as e:
+                print("Email error:", e)
 
     flash(f"Application {status}", "success")
     return redirect(url_for('admin_dashboard'))
