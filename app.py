@@ -2,21 +2,40 @@ from flask import (
     Flask, render_template, redirect,
     url_for, request, send_from_directory, flash
 )
+from dotenv import load_dotenv
+import os
+
+# ✅ LOAD ENV FILE
+load_dotenv("imp.env")
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager, UserMixin,
     login_user, login_required,
     logout_user, current_user
 )
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'hireflow-secret-key'
+
+# ================= CORE CONFIG =================
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')   # ✅ from env
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
+# ================= MAIL CONFIG =================
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
+
+mail = Mail(app)
+
+# ================= OTHER CONFIG =================
 ALLOWED_EXTENSIONS = {'pdf'}
 
 db = SQLAlchemy(app)
@@ -24,7 +43,6 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 # ================= MODELS =================
-
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -61,29 +79,38 @@ class Application(db.Model):
     archived_by_user = db.Column(db.Boolean, default=False)
 
 
+# ✅ NEW MODEL: Notifications (STEP 1)
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ================= HELPERS =================
+from functools import wraps
 
 def admin_required(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.role != "admin":
             return "Access Denied", 403
         return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__
     return wrapper
 
 
 def company_required(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.role != "company":
             return "Access Denied", 403
         return func(*args, **kwargs)
-    wrapper.__name__ = func.__name__
     return wrapper
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -450,8 +477,52 @@ def admin_job_action(job_id, action):
 @admin_required
 def update_status(app_id, status):
     application = Application.query.get_or_404(app_id)
+
+    if status not in ["Shortlisted", "Rejected"]:
+        flash("Invalid status", "danger")
+        return redirect(url_for('admin_dashboard'))
+
     application.status = status
     db.session.commit()
+
+    # ✅ STEP 3A: CREATE NOTIFICATION (ONLY ON SHORTLIST)
+    if status == "Shortlisted":
+        job = Job.query.get(application.job_id)
+        user = User.query.get(application.user_id)
+
+        message = (
+            f"🎉 CONGRATS! Dear {user.username}, "
+            f"your application for '{job.title}' has been shortlisted."
+        )
+
+        db.session.add(Notification(
+            user_id=user.id,
+            message=message
+        ))
+        db.session.commit()
+
+        # ✅ STEP 3B: SEND EMAIL
+        try:
+            msg = Message(
+                subject="🎉 You’ve been Shortlisted – HireCoreX",
+                recipients=[application.email],
+                body=f"""
+Dear {user.username},
+
+Congratulations! 🎉
+
+Your application for the role "{job.title}" has been shortlisted.
+
+The hiring team will contact you soon.
+
+Best regards,
+HireCoreX Team
+"""
+            )
+            mail.send(msg)
+        except Exception as e:
+            print("Email error:", e)
+
     flash(f"Application {status}", "success")
     return redirect(url_for('admin_dashboard'))
 
@@ -513,6 +584,36 @@ def settings():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+@app.context_processor
+def inject_notifications():
+    if not current_user.is_authenticated or current_user.role != "user":
+        return {}
+
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Notification.created_at.desc()).all()
+
+    unread_count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).count()
+
+    return dict(
+        notifications=notifications,
+        unread_count=unread_count
+    )
+
+@app.route('/notifications/read/<int:notif_id>')
+@login_required
+def mark_notification_read(notif_id):
+    notif = Notification.query.get_or_404(notif_id)
+
+    if notif.user_id != current_user.id:
+        return "Unauthorized", 403
+
+    notif.is_read = True
+    db.session.commit()
+    return redirect(request.referrer or url_for('jobs'))
 
 # ================= INIT =================
 with app.app_context():
