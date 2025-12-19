@@ -19,7 +19,13 @@ app = Flask(__name__)
 
 # ================= BASIC CONFIG =================
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+# ✅ FIXED
+db_url = os.getenv("DATABASE_URL")
+if db_url and db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 # ================= MAIL CONFIG =================
@@ -503,7 +509,7 @@ def update_status(app_id, status):
             try:
                 msg = Message(
                     subject="🎉 You’ve been Shortlisted – HireCoreX",
-                    recipients=[application.email],
+                    recipients=[application.email] if application.email else [],
                     body=f"""
 Dear {user.username},
 
@@ -615,11 +621,7 @@ def mark_notification_read(notif_id):
 
 # ================= INIT =================
 with app.app_context():
-    if os.getenv("RESET_DB") == "true":
-        db.drop_all()
-        db.create_all()
-    else:
-        db.create_all()
+    db.create_all()
 
     if not Job.query.filter_by(job_type="platform").first():
         default_jobs = [
