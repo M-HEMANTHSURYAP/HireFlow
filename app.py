@@ -613,7 +613,11 @@ def mark_notification_read(notif_id):
 
 # ================= INIT =================
 with app.app_context():
-    db.create_all()
+    if os.getenv("RESET_DB") == "true":
+        db.drop_all()
+        db.create_all()
+    else:
+        db.create_all()
 
     if not Job.query.filter_by(job_type="platform").first():
         default_jobs = [
