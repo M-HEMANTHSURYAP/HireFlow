@@ -2,11 +2,6 @@ from flask import (
     Flask, render_template, redirect,
     url_for, request, send_from_directory, flash
 )
-from dotenv import load_dotenv
-import os
-
-# ✅ LOAD ENV FILE
-load_dotenv("imp.env")
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
@@ -14,14 +9,16 @@ from flask_login import (
     login_user, login_required,
     logout_user, current_user
 )
+
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 
-# ================= CORE CONFIG =================
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')   # ✅ from env
+# ================= BASIC CONFIG =================
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
@@ -35,7 +32,6 @@ app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
 
 mail = Mail(app)
 
-# ================= OTHER CONFIG =================
 ALLOWED_EXTENSIONS = {'pdf'}
 
 db = SQLAlchemy(app)
