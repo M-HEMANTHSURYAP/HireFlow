@@ -10,25 +10,6 @@
         border: 1px solid #eef2f6;
         overflow: hidden;
     }
-    .table-applicants thead th {
-        background-color: #f8fafc;
-        color: #64748b;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 1px;
-        padding: 1.25rem;
-        border-bottom: 2px solid #f1f5f9;
-    }
-    .table-applicants tbody td {
-        padding: 1.25rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .candidate-name {
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 2px;
-    }
     .job-pill {
         background: #e0f2fe;
         color: #0369a1;
@@ -36,12 +17,6 @@
         padding: 4px 10px;
         border-radius: 6px;
         font-weight: 600;
-    }
-    .btn-resume {
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        border: 1px solid #e2e8f0;
     }
     .status-indicator {
         font-size: 0.75rem;
@@ -57,9 +32,7 @@
             <h2 class="fw-bold mb-1">Talent Pipeline 📄</h2>
             <p class="text-muted mb-0">Candidates who applied to your jobs</p>
         </div>
-        <a href="/company" class="btn btn-light border rounded-pill">
-            ← Dashboard
-        </a>
+        <a href="/company" class="btn btn-light border rounded-pill">← Dashboard</a>
     </div>
 
     {% if applications %}
@@ -78,7 +51,7 @@
                 <tbody>
                 {% for app, user, job in applications %}
                     <tr>
-                        <td class="fw-semibold">{{ user.username }}</td>
+                        <td>{{ user.username }}</td>
                         <td><span class="job-pill">{{ job.title }}</span></td>
                         <td>{{ app.email }}</td>
                         <td class="text-center">
@@ -103,7 +76,7 @@
                                 </div>
                             {% elif app.status == "Shortlisted" %}
                                 <span class="status-indicator bg-success-subtle text-success">Shortlisted</span>
-                            {% elif app.status == "Rejected" %}
+                            {% else %}
                                 <span class="status-indicator bg-danger-subtle text-danger">Rejected</span>
                             {% endif %}
                         </td>
@@ -114,10 +87,7 @@
         </div>
     </div>
     {% else %}
-        <div class="text-center text-muted py-5">
-            No applications yet.
-        </div>
+        <div class="text-center text-muted py-5">No applications yet.</div>
     {% endif %}
 </div>
-
 {% endblock %}
