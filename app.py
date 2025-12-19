@@ -10,7 +10,9 @@ from flask_login import (
     logout_user, current_user
 )
 
-from flask_mail import Mail, Message
+# ❌ EMAIL REMOVED
+# from flask_mail import Mail, Message
+
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
@@ -19,28 +21,33 @@ app = Flask(__name__)
 
 # ================= BASIC CONFIG =================
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-# ✅ FIXED
+
+# ✅ DATABASE CONFIG (SAFE FOR LOCAL + RENDER)
 db_url = os.getenv("DATABASE_URL")
-if db_url and db_url.startswith("postgresql://"):
-    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+if db_url:
+    # Render / Production (PostgreSQL)
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace(
+            "postgresql://",
+            "postgresql+psycopg2://",
+            1
+        )
+else:
+    # Local development fallback
+    db_url = "sqlite:///database.db"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['UPLOAD_FOLDER'] = 'uploads'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 
-# ================= MAIL CONFIG =================
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
-
-mail = Mail(app)
 
 ALLOWED_EXTENSIONS = {'pdf'}
 
 db = SQLAlchemy(app)
+
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
@@ -175,20 +182,11 @@ def jobs():
         .all()
     }
 
-    # ✅ ADDITION: track ALL jobs ever applied (including archived)
-    applied_job_ids = [
-        a.job_id
-        for a in Application.query
-        .filter_by(user_id=current_user.id)
-        .all()
-    ]
-
     return render_template(
         'jobs.html',
         company_jobs=company_jobs,
         platform_jobs=platform_jobs,
-        applications=applications,
-        applied_job_ids=applied_job_ids   # ✅ PASS TO TEMPLATE
+        applications=applications
     )
 
 
@@ -261,7 +259,7 @@ def withdraw(job_id):
         flash("Cannot withdraw after being shortlisted", "danger")
         return redirect(url_for('jobs'))
 
-    # Withdraw = delete record
+    # Withdraw = delete record (correct behavior)
     db.session.delete(application)
     db.session.commit()
 
@@ -286,6 +284,7 @@ def archive(job_id):
     flash("Shortlisted message removed from view", "success")
     return redirect(url_for('jobs'))
 
+# ================= COMPANY =================
 # ================= COMPANY =================
 
 @app.route('/company')
@@ -317,24 +316,49 @@ def company_add_job():
     return render_template('company_add_job.html')
 
 
-@app.route('/company/shortlisted')
+@app.route('/company/applications')
 @login_required
 @company_required
-def company_shortlisted():
-    jobs = Job.query.filter_by(company=current_user.username).all()
+def company_applications():
+    jobs = Job.query.filter_by(
+        company=current_user.username,
+        job_type="company"
+    ).all()
+
     job_ids = [job.id for job in jobs]
 
     applications = db.session.query(
         Application, User, Job
-    ).join(User, Application.user_id == User.id)\
-     .join(Job, Application.job_id == Job.id)\
+    ).join(User, Application.user_id == User.id) \
+     .join(Job, Application.job_id == Job.id) \
+     .filter(Application.job_id.in_(job_ids)) \
+     .all()
+
+    return render_template(
+        'company_applications.html',
+        applications=applications
+    )
+@app.route('/company/shortlisted')
+@login_required
+@company_required
+def company_shortlisted():
+    jobs = Job.query.filter_by(
+        company=current_user.username
+    ).all()
+
+    job_ids = [job.id for job in jobs]
+
+    applications = db.session.query(
+        Application, User, Job
+    ).join(User, Application.user_id == User.id) \
+     .join(Job, Application.job_id == Job.id) \
      .filter(
-        Application.job_id.in_(job_ids),
-        Application.status == "Shortlisted"
+         Application.job_id.in_(job_ids),
+         Application.status == "Shortlisted"
      ).all()
 
     return render_template(
-        "company_shortlisted.html",
+        'company_shortlisted.html',
         applications=applications
     )
 @app.route('/company/platform-applications')
@@ -354,85 +378,54 @@ def company_platform_applications():
         'company_applications.html',
         applications=applications
     )
-
-@app.route('/company/applications')
-@login_required
-@company_required
-def company_applications():
-    # Get ONLY company-posted jobs (exclude platform jobs)
-    jobs = Job.query.filter_by(
-        company=current_user.username,
-        job_type="company"
-    ).all()
-
-    job_ids = [job.id for job in jobs]
-
-    # Get applications only for those jobs
-    applications = db.session.query(
-        Application, User, Job
-    ).join(User, Application.user_id == User.id) \
-     .join(Job, Application.job_id == Job.id) \
-     .filter(Application.job_id.in_(job_ids)) \
-     .all()
-
-    return render_template(
-        'company_applications.html',
-        applications=applications
-    )
-
 @app.route('/company/update_status/<int:app_id>/<status>')
 @login_required
 @company_required
 def company_update_status(app_id, status):
     application = Application.query.get_or_404(app_id)
-    job = Job.query.get_or_404(application.job_id)
 
-    # ✅ ALLOW:
-    # 1. Company-owned jobs
-    # 2. Platform jobs (HireFlow)
-    if job.job_type == "company" and job.company != current_user.username:
-        return "Unauthorized", 403
+    # 🔒 Ensure company owns this job
+    job = Job.query.get(application.job_id)
+    if not job or job.company != current_user.username:
+        return "Access Denied", 403
 
     if status not in ["Shortlisted", "Rejected"]:
-        return "Invalid status", 400
+        flash("Invalid status", "danger")
+        return redirect(url_for('company_applications'))
 
     application.status = status
     db.session.commit()
 
-    flash(f"Candidate {status}", "success")
+    # 🔔 Notification (no email)
+    if status == "Shortlisted":
+        db.session.add(Notification(
+            user_id=application.user_id,
+            message=f"🎉 Your application for '{job.title}' was shortlisted!"
+        ))
+        db.session.commit()
 
-    # 🔁 Redirect back correctly
-    if job.job_type == "platform":
-        return redirect(url_for('company_platform_applications'))
-
+    flash(f"Application {status}", "success")
     return redirect(url_for('company_applications'))
 
+# ================= ADMIN =================
 # ================= ADMIN =================
 
 @app.route('/admin')
 @login_required
 @admin_required
 def admin_dashboard():
-
-    # ONLY pending company job requests
     job_requests = JobRequest.query.filter_by(status="Pending").all()
-
-    return render_template(
-        'admin.html',
-        job_requests=job_requests
-    )
+    return render_template('admin.html', job_requests=job_requests)
 
 
-
-# ✅ FIXED: ADMIN HISTORY ROUTE
 @app.route('/admin/history')
 @login_required
 @admin_required
 def admin_history():
     applications = db.session.query(
         Application, User, Job
-    ).join(User, Application.user_id == User.id)\
-     .join(Job, Application.job_id == Job.id)\
+    ).join(User, Application.user_id == User.id) \
+     .join(Job, Application.job_id == Job.id) \
      .all()
 
     return render_template(
@@ -441,37 +434,12 @@ def admin_history():
     )
 
 
-
 @app.route('/admin/job-requests')
 @login_required
 @admin_required
 def admin_job_requests():
     jobs = JobRequest.query.filter_by(status="Pending").all()
     return render_template('admin_job_requests.html', jobs=jobs)
-
-
-@app.route('/admin/job-action/<int:job_id>/<action>')
-@login_required
-@admin_required
-def admin_job_action(job_id, action):
-    job_req = JobRequest.query.get_or_404(job_id)
-
-    if action == "approve":
-        db.session.add(Job(
-            title=job_req.title,
-            company=job_req.company_username,
-            description=job_req.description,
-            job_type="company"
-        ))
-
-        job_req.status = "Approved"
-
-    elif action == "reject":
-        job_req.status = "Rejected"
-
-    db.session.commit()
-    flash("Job action completed", "success")
-    return redirect(url_for('admin_job_requests'))
 
 
 @app.route('/update_status/<int:app_id>/<status>')
@@ -487,54 +455,25 @@ def update_status(app_id, status):
     application.status = status
     db.session.commit()
 
-    # ✅ ONLY if shortlisted
+    # ✅ Notification ONLY
     if status == "Shortlisted":
         job = Job.query.get(application.job_id)
         user = User.query.get(application.user_id)
 
-        # 🔐 SAFETY CHECK (THIS FIXES 500 ERROR)
         if job and user:
-            message = (
-                f"🎉 CONGRATS! Dear {user.username}, "
-                f"your application for '{job.title}' has been shortlisted."
-            )
-
-            db.session.add(Notification(
-                user_id=user.id,
-                message=message
-            ))
-            db.session.commit()
-
-            # 📧 Email (safe)
-            try:
-                msg = Message(
-                    subject="🎉 You’ve been Shortlisted – HireCoreX",
-                    recipients=[application.email] if application.email else [],
-                    body=f"""
-Dear {user.username},
-
-Congratulations! 🎉
-
-Your application for the role "{job.title}" has been shortlisted.
-
-The hiring team will contact you soon.
-
-Best regards,
-HireCoreX Team
-"""
+            db.session.add(
+                Notification(
+                    user_id=user.id,
+                    message=f"🎉 Congratulations {user.username}! "
+                            f"Your application for '{job.title}' was shortlisted."
                 )
-                mail.send(msg)
-            except Exception as e:
-                print("Email error:", e)
+            )
+            db.session.commit()
 
     flash(f"Application {status}", "success")
     return redirect(url_for('admin_dashboard'))
 
 
-@app.route('/resume/<filename>')
-@login_required
-def view_resume(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 # ================= USER ACCOUNT PAGES =================
 
 @app.route('/my-applications')
@@ -647,6 +586,23 @@ with app.app_context():
         ))
 
     db.session.commit()
+# ================= FILE VIEWING =================
+
+@app.route('/resume/<path:filename>')
+@login_required
+def view_resume(filename):
+    uploads_dir = app.config['UPLOAD_FOLDER']
+    file_path = os.path.join(uploads_dir, filename)
+
+    if not os.path.exists(file_path):
+        flash("Resume file not found on server", "danger")
+        return redirect(request.referrer or url_for('company_dashboard'))
+
+    return send_from_directory(
+        uploads_dir,
+        filename,
+        as_attachment=False
+    )
 
 
 if __name__ == "__main__":
